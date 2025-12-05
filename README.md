@@ -445,6 +445,7 @@ Bouncer uses a team of specialized sub-agents to check different types of files.
 - **[Authentication](docs/AUTHENTICATION.md)** - API keys and cloud provider setup
 - **[Deployment](docs/DEPLOYMENT.md)** - Running as a service
 - **[Obsidian Bouncer Guide](docs/OBSIDIAN_BOUNCER.md)** - Specialized guide for Obsidian vaults
+- **[Creating Custom Bouncers](docs/CREATING_BOUNCERS.md)** - Guide to building your own bouncers
 
 ---
 
