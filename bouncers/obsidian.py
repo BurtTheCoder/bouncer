@@ -4,6 +4,7 @@ Checks Obsidian markdown notes for knowledge management best practices
 """
 
 from .base import BaseBouncer
+from .schemas import get_bouncer_schema
 import logging
 import json
 
@@ -47,7 +48,8 @@ class ObsidianBouncer(BaseBouncer):
             cwd=str(event.path.parent),
             allowed_tools=["Read", "Write", "Bash"],
             permission_mode="acceptEdits" if self.auto_fix else "plan",
-            system_prompt=self._get_system_prompt()
+            system_prompt=self._get_system_prompt(),
+            structured_output=get_bouncer_schema("obsidian")
         )
         
         try:
@@ -55,12 +57,14 @@ class ObsidianBouncer(BaseBouncer):
                 prompt = self._build_prompt(event)
                 await client.query(prompt)
                 
+                # With structured_output, we get clean JSON
                 response_text = ""
                 async for msg in client.receive_response():
                     if hasattr(msg, 'content'):
                         for block in msg.content:
                             if hasattr(block, 'text'):
-                                response_text += block.text
+                                # Only keep the last text block (final JSON output)
+                                response_text = block.text
                 
                 result_data = self._parse_response(response_text)
                 status = self._determine_status(result_data)

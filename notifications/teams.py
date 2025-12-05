@@ -5,6 +5,7 @@ Sends bouncer results to Microsoft Teams via webhooks
 
 import requests
 import logging
+from .formatter import NotificationFormatter
 from typing import Dict, Any
 from datetime import datetime
 
@@ -15,6 +16,8 @@ class TeamsNotifier:
     """Send notifications to Microsoft Teams via webhooks"""
     
     def __init__(self, config: Dict[str, Any]):
+        self.detail_level = config.get('detail_level', 'summary')
+        self.formatter = NotificationFormatter(self.detail_level)
         self.enabled = config.get('enabled', False)
         self.webhook_url = config.get('webhook_url')
         self.min_severity = config.get('min_severity', 'warning')

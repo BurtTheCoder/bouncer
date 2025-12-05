@@ -188,7 +188,9 @@ notifications:
     enabled: false
     webhook_url: ${SLACK_WEBHOOK_URL}
     channel: "#bouncer"
-    min_severity: warning  # info, warning, denied, error
+    min_severity: warning
+    detail_level: summary  # info, warning, denied, error
+    detail_level: summary  # summary, detailed, full_transcript
   
   # Discord notifications
   discord:
@@ -196,6 +198,7 @@ notifications:
     webhook_url: ${DISCORD_WEBHOOK_URL}
     username: "Bouncer Bot"
     min_severity: warning
+    detail_level: summary
   
   # Email notifications (SMTP)
   email:
@@ -209,12 +212,14 @@ notifications:
       - "team@your-domain.com"
     use_tls: true
     min_severity: error
+    detail_level: detailed
   
   # Microsoft Teams notifications
   teams:
     enabled: false
     webhook_url: ${TEAMS_WEBHOOK_URL}
     min_severity: warning
+    detail_level: summary
   
   # Generic webhook (for custom integrations)
   webhook:
@@ -224,6 +229,7 @@ notifications:
     headers:
       Authorization: "Bearer ${WEBHOOK_SECRET}"
     min_severity: info
+    detail_level: detailed
   
   # File logging (JSON)
   file_log:

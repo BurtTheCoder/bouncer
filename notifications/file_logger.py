@@ -5,6 +5,7 @@ Logs bouncer results to JSON files
 
 import json
 import logging
+from .formatter import NotificationFormatter
 from pathlib import Path
 from datetime import datetime
 from typing import List
@@ -18,6 +19,8 @@ class FileLoggerNotifier:
     def __init__(self, config: dict):
         self.log_dir = Path(config.get('log_dir', '.bouncer/logs'))
         self.rotation = config.get('rotation', 'daily')
+        self.detail_level = config.get('detail_level', 'summary')
+        self.formatter = NotificationFormatter(self.detail_level)
         self.enabled = config.get('enabled', True)
         
         # Create log directory

@@ -6,6 +6,7 @@ Sends bouncer results to Slack
 import aiohttp
 import logging
 from typing import List
+from .formatter import NotificationFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,9 @@ class SlackNotifier:
         self.webhook_url = config.get('webhook_url')
         self.channel = config.get('channel', '#bouncer')
         self.min_severity = config.get('min_severity', 'warning')
+        self.detail_level = config.get('detail_level', 'summary')
         self.enabled = config.get('enabled', False) and self.webhook_url
+        self.formatter = NotificationFormatter(self.detail_level)
     
     async def notify(self, event, results: List):
         """Send notification about bouncer results"""
@@ -28,8 +31,11 @@ class SlackNotifier:
         if not self._should_notify(results):
             return
         
+        # Format data based on detail level
+        formatted_data = self.formatter.format(event, results)
+        
         # Build Slack message
-        message = self._build_message(event, results)
+        message = self._build_message(formatted_data, results)
         
         # Send to Slack
         try:

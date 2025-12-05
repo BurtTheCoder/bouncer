@@ -4,6 +4,7 @@ Checks documentation files for quality and completeness
 """
 
 from .base import BaseBouncer
+from .schemas import get_bouncer_schema
 import logging
 import json
 
@@ -47,7 +48,7 @@ class DocumentationBouncer(BaseBouncer):
                     if hasattr(msg, 'content'):
                         for block in msg.content:
                             if hasattr(block, 'text'):
-                                response_text += block.text
+                                response_text = block.text  # Only keep last message (structured JSON)
                 
                 result_data = self._parse_response(response_text)
                 status = self._determine_status(result_data)

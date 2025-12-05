@@ -5,6 +5,7 @@ Sends bouncer results to any webhook endpoint
 
 import requests
 import logging
+from .formatter import NotificationFormatter
 from typing import Dict, Any
 from datetime import datetime
 
@@ -15,6 +16,8 @@ class WebhookNotifier:
     """Send notifications to generic webhook endpoints"""
     
     def __init__(self, config: Dict[str, Any]):
+        self.detail_level = config.get('detail_level', 'summary')
+        self.formatter = NotificationFormatter(self.detail_level)
         self.enabled = config.get('enabled', False)
         self.webhook_url = config.get('webhook_url')
         self.method = config.get('method', 'POST').upper()
