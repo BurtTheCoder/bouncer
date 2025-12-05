@@ -438,6 +438,15 @@ Bouncer uses a team of specialized sub-agents to check different types of files.
 
 ---
 
+## 📖 Documentation
+
+- **[Environment Variables](docs/ENVIRONMENT_VARIABLES.md)** - Configuration overrides via env vars
+- **[Authentication](docs/AUTHENTICATION.md)** - API keys and cloud provider setup
+- **[Deployment](docs/DEPLOYMENT.md)** - Running as a service
+- **[Obsidian Bouncer Guide](docs/OBSIDIAN_BOUNCER.md)** - Specialized guide for Obsidian vaults
+
+---
+
 ## 🧩 Extensibility
 
 Bouncer is designed to be easily extended.
