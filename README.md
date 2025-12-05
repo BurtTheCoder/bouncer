@@ -13,7 +13,7 @@ Think of it as a bouncer at a club - only quality gets past the door.
 
 ## ✨ Features
 
-- **🎯 Specialized Bouncers**: Individual, expert agents for Code, Security, Documentation, and Data.
+- **🎯 10 Specialized Bouncers**: Expert agents for Code Quality, Security, Documentation, Data, Performance, Accessibility, License, Infrastructure, API Contracts, and Dependencies.
 - **🔧 Auto-Fix**: Automatically fixes formatting, linting, and other safe-to-fix issues.
 - **🚨 Real-time Alerts**: Instant notifications via Slack, with more options coming soon.
 - **🎛️ Fully Configurable**: Fine-tune everything with a simple `bouncer.yaml` file.
@@ -149,6 +149,36 @@ Bouncer uses a team of specialized sub-agents to check different types of files.
 
 - **Checks**: JSON/YAML/CSV schema and syntax validation.
 - **Fixes**: Automatically formats JSON and YAML files.
+
+### ⚡ Performance Bouncer
+
+- **Checks**: Code complexity, large files, unoptimized images, memory leaks, N+1 queries.
+- **Fixes**: Optimizes images and refactors inefficient code patterns.
+
+### ♿ Accessibility Bouncer
+
+- **Checks**: WCAG compliance, missing alt text, color contrast, ARIA labels.
+- **Fixes**: Adds alt text, ARIA labels, and improves accessibility.
+
+### ⚖️ License Bouncer
+
+- **Checks**: Missing copyright headers, license compatibility, GDPR compliance.
+- **Fixes**: Adds copyright headers and ensures license compliance.
+
+### 🏗️ Infrastructure Bouncer
+
+- **Checks**: Dockerfile best practices, Kubernetes manifests, Terraform/CloudFormation.
+- **Fixes**: Improves infrastructure configuration and security.
+
+### 🔌 API Contract Bouncer
+
+- **Checks**: OpenAPI/Swagger validation, breaking API changes, GraphQL schemas.
+- **Fixes**: Validates API contracts and prevents breaking changes.
+
+### 📦 Dependency Bouncer
+
+- **Checks**: Known CVEs, outdated dependencies, license conflicts.
+- **Fixes**: Reports vulnerabilities (never auto-updates dependencies).
 
 ---
 

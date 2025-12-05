@@ -72,6 +72,84 @@ bouncers:
     checks:
       - schema
       - formatting
+  
+  # Performance Bouncer
+  performance:
+    enabled: true
+    file_types:
+      - .py
+      - .js
+      - .ts
+      - .png
+      - .jpg
+      - .jpeg
+    auto_fix: true
+    max_file_size: 1000000  # 1MB
+    max_image_size: 500000  # 500KB
+  
+  # Accessibility Bouncer
+  accessibility:
+    enabled: true
+    file_types:
+      - .html
+      - .jsx
+      - .tsx
+      - .vue
+    auto_fix: true
+    wcag_level: AA  # A, AA, or AAA
+  
+  # License & Legal Bouncer
+  license:
+    enabled: true
+    file_types:
+      - .py
+      - .js
+      - .ts
+      - .java
+      - .go
+    auto_fix: true
+    project_license: MIT
+    require_headers: true
+  
+  # Infrastructure Bouncer
+  infrastructure:
+    enabled: true
+    file_types:
+      - Dockerfile
+      - .yaml
+      - .yml
+      - .tf
+      - .json
+    auto_fix: false
+    checks:
+      - dockerfile
+      - k8s
+      - terraform
+  
+  # API Contract Bouncer
+  api_contract:
+    enabled: true
+    file_types:
+      - .yaml
+      - .yml
+      - .json
+      - .graphql
+    auto_fix: true
+    api_type: openapi  # openapi, graphql, grpc
+    allow_breaking_changes: false
+  
+  # Dependency Bouncer
+  dependency:
+    enabled: true
+    file_types:
+      - package.json
+      - requirements.txt
+      - Pipfile
+      - go.mod
+      - Cargo.toml
+    auto_fix: false  # Never auto-update dependencies
+    severity_threshold: medium
+    check_updates: true
 
 # Notification Configuration
 notifications:
