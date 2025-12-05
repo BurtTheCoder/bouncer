@@ -15,6 +15,7 @@ from .infrastructure import InfrastructureBouncer
 from .api_contract import APIContractBouncer
 from .dependency import DependencyBouncer
 from .obsidian import ObsidianBouncer
+from .log_investigator import LogInvestigator
 
 __all__ = [
     'BaseBouncer',
@@ -28,5 +29,6 @@ __all__ = [
     'InfrastructureBouncer',
     'APIContractBouncer',
     'DependencyBouncer',
-    'ObsidianBouncer'
+    'ObsidianBouncer',
+    'LogInvestigator'
 ]

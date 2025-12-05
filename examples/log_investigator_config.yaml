@@ -1,0 +1,61 @@
+# Example Configuration for Log Investigator Bouncer
+#
+# This bouncer monitors application logs for errors and automatically
+# investigates the codebase to find root causes and suggest fixes.
+
+watch_dir: "/var/log/myapp"  # Directory containing log files
+
+bouncers:
+  # Log Investigator - Monitors logs and investigates errors
+  log_investigator:
+    enabled: true
+    auto_fix: false  # Recommend manual review for code fixes
+    
+    # Log configuration
+    log_dir: "/var/log/myapp"  # Where to find log files
+    log_patterns:  # Which files to monitor
+      - "*.log"
+      - "error*.log"
+      - "application*.log"
+    
+    # Codebase configuration
+    codebase_dir: "/path/to/your/codebase"  # Where to investigate
+    
+    # Error detection
+    error_levels:  # Which log levels to investigate
+      - "ERROR"
+      - "CRITICAL"
+      - "EXCEPTION"
+      - "FATAL"
+    
+    # Performance tuning
+    max_errors_per_scan: 10  # Don't overwhelm on first run
+    lookback_hours: 24  # Only check recent errors
+    track_fixed_errors: true  # Remember investigated errors
+    
+    # File types to check (inherited from base)
+    file_types:
+      - ".log"
+      - ".txt"
+
+notifications:
+  # Slack notifications for error investigations
+  slack:
+    enabled: true
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    detail_level: "detailed"  # Show investigation details
+  
+  # File logger for audit trail
+  file_log:
+    enabled: true
+    log_file: ".bouncer/investigations.json"
+
+# Ignore patterns
+ignore_patterns:
+  - ".git"
+  - "node_modules"
+  - "__pycache__"
+  - "venv"
+  - ".bouncer"
+  - "*.tmp"
+  - "*.bak"
