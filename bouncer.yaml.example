@@ -1,0 +1,207 @@
+# Bouncer Configuration File
+# Copy this to bouncer.yaml and customize for your project
+
+# Directory to watch for file changes
+watch_dir: "."
+
+# Bouncers Configuration
+bouncers:
+  # Code Quality Bouncer
+  code_quality:
+    enabled: true
+    auto_fix: false
+    file_types:
+      - ".py"
+      - ".js"
+      - ".ts"
+      - ".java"
+      - ".go"
+  
+  # Security Bouncer
+  security:
+    enabled: true
+    auto_fix: false
+    file_types:
+      - ".py"
+      - ".js"
+      - ".ts"
+      - ".java"
+      - ".env"
+  
+  # Documentation Bouncer
+  documentation:
+    enabled: true
+    auto_fix: false
+    file_types:
+      - ".md"
+      - ".rst"
+      - ".txt"
+  
+  # Data Validation Bouncer
+  data_validation:
+    enabled: true
+    auto_fix: false
+    file_types:
+      - ".json"
+      - ".yaml"
+      - ".yml"
+      - ".csv"
+  
+  # Performance Bouncer
+  performance:
+    enabled: true
+    auto_fix: false
+    file_types:
+      - ".py"
+      - ".js"
+      - ".ts"
+  
+  # Accessibility Bouncer
+  accessibility:
+    enabled: true
+    auto_fix: false
+    file_types:
+      - ".html"
+      - ".jsx"
+      - ".tsx"
+  
+  # License Bouncer
+  license:
+    enabled: true
+    auto_fix: false
+    file_types:
+      - ".py"
+      - ".js"
+      - ".ts"
+      - ".java"
+  
+  # Infrastructure Bouncer
+  infrastructure:
+    enabled: true
+    auto_fix: false
+    file_types:
+      - ".yaml"
+      - ".yml"
+      - ".tf"
+      - "Dockerfile"
+  
+  # API Contract Bouncer
+  api_contract:
+    enabled: true
+    auto_fix: false
+    file_types:
+      - ".yaml"
+      - ".yml"
+      - ".json"
+  
+  # Dependency Bouncer
+  dependency:
+    enabled: true
+    auto_fix: false
+    file_types:
+      - "package.json"
+      - "requirements.txt"
+      - "Pipfile"
+      - "go.mod"
+  
+  # Obsidian Bouncer
+  obsidian:
+    enabled: false
+    auto_fix: false
+    file_types:
+      - ".md"
+  
+  # Log Investigator Bouncer
+  log_investigator:
+    enabled: false
+    auto_fix: false
+    log_dir: "/var/log"
+    codebase_dir: "."
+    log_patterns:
+      - "*.log"
+    error_levels:
+      - "ERROR"
+      - "CRITICAL"
+      - "EXCEPTION"
+      - "FATAL"
+    max_errors_per_scan: 10
+    lookback_hours: 24
+    track_fixed_errors: true
+
+# MCP Integrations Configuration
+integrations:
+  # GitHub Integration
+  github:
+    enabled: false
+    auto_create_pr: false
+    auto_create_issue: false
+    branch_prefix: "bouncer"
+    default_labels:
+      - "bouncer"
+      - "automated"
+  
+  # GitLab Integration
+  gitlab:
+    enabled: false
+    auto_create_mr: false
+    auto_create_issue: false
+    branch_prefix: "bouncer"
+  
+  # Linear Integration
+  linear:
+    enabled: false
+    auto_create_issue: false
+    project_id: ""
+    team_id: ""
+    default_priority: "medium"
+  
+  # Jira Integration
+  jira:
+    enabled: false
+    auto_create_ticket: false
+    project_key: ""
+    default_issue_type: "Bug"
+    default_priority: "Medium"
+
+# Notifications Configuration
+notifications:
+  # Slack notifications
+  slack:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    detail_level: "summary"  # summary, detailed, minimal
+  
+  # Discord notifications
+  discord:
+    enabled: false
+    webhook_url: "${DISCORD_WEBHOOK_URL}"
+  
+  # File logger (always enabled)
+  file_log:
+    enabled: true
+    log_file: ".bouncer/bouncer.json"
+
+# Ignore Patterns
+ignore_patterns:
+  - ".git"
+  - ".github"
+  - "node_modules"
+  - "__pycache__"
+  - "venv"
+  - ".venv"
+  - "env"
+  - ".env"
+  - ".bouncer"
+  - "*.pyc"
+  - "*.pyo"
+  - "*.pyd"
+  - ".pytest_cache"
+  - ".mypy_cache"
+  - "*.egg-info"
+  - "dist"
+  - "build"
+  - ".DS_Store"
+  - "*.tmp"
+  - "*.bak"
+  - "*.swp"
+  - "*.swo"
