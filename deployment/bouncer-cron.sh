@@ -16,6 +16,14 @@ LOG_DIR="$BOUNCER_DIR/logs"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_FILE="$LOG_DIR/bouncer_cron_$TIMESTAMP.log"
 
+# Scan mode: "full" or "incremental"
+# - full: Scan all files (good for periodic audits)
+# - incremental: Only scan files changed since last run (faster, uses git)
+SCAN_MODE="${SCAN_MODE:-full}"  # Default to full scan
+
+# For incremental mode: time window to check (e.g., "24 hours ago", "1 day ago")
+TIME_WINDOW="${TIME_WINDOW:-24 hours ago}"
+
 # Create log directory if it doesn't exist
 mkdir -p "$LOG_DIR"
 
@@ -34,8 +42,17 @@ if [ -f "$BOUNCER_DIR/.env" ]; then
 fi
 
 # Run Bouncer in batch mode
-echo "Running Bouncer scan..." >> "$LOG_FILE"
-python -m bouncer.main scan "$BOUNCER_DIR" >> "$LOG_FILE" 2>&1
+echo "Running Bouncer scan (mode: $SCAN_MODE)..." >> "$LOG_FILE"
+
+if [ "$SCAN_MODE" = "incremental" ]; then
+    # Incremental: only check files changed since TIME_WINDOW
+    echo "Checking files modified since: $TIME_WINDOW" >> "$LOG_FILE"
+    python -m bouncer.main scan "$BOUNCER_DIR" --git-diff --since="$TIME_WINDOW" >> "$LOG_FILE" 2>&1
+else
+    # Full: scan all files
+    echo "Running full scan of all files" >> "$LOG_FILE"
+    python -m bouncer.main scan "$BOUNCER_DIR" >> "$LOG_FILE" 2>&1
+fi
 
 # Log completion
 echo "=== Bouncer Cron Job Completed at $(date) ===" >> "$LOG_FILE"

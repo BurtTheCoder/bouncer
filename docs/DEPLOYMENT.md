@@ -543,7 +543,10 @@ Shows:
 
 While Bouncer excels at real-time monitoring, you can also run it on a schedule for periodic audits, batch processing, or off-hours scanning. This is ideal for environments where continuous monitoring is unnecessary or resource-intensive.
 
-Scheduled execution uses **Batch Mode** (`bouncer scan`) to check an entire directory at specified intervals.
+Scheduled execution uses **Batch Mode** (`bouncer scan`) to check an entire directory at specified intervals. You can choose between two scan modes:
+
+- **Full Scan (default):** Scans every file in the target directory. Ideal for comprehensive periodic audits.
+- **Incremental Scan:** Scans only the files that have changed since the last run. Faster and more resource-efficient, making it perfect for frequent checks.
 
 ### When to Use Scheduled Execution vs. Continuous Monitoring
 
@@ -557,6 +560,17 @@ Scheduled execution uses **Batch Mode** (`bouncer scan`) to check an entire dire
 | **Batch Processing** | ❌ **Not designed for it** | ✅ **Ideal** |
 | **Low-resource Environments** | ❌ **Can be resource-intensive** | ✅ **Resource-friendly** |
 | **Legacy Codebases** | ❌ **Can be noisy** | ✅ **Good for periodic checks** |
+
+---
+
+### Scan Modes: Full vs. Incremental
+
+| Scan Mode | Best For | Pros | Cons |
+| :--- | :--- | :--- | :--- |
+| **Full Scan** | Periodic deep audits | Catches everything, simple to configure | Can be slow and resource-intensive on large projects |
+| **Incremental Scan** | Frequent, fast checks | Lightweight, efficient, faster feedback | Relies on Git history, may miss non-Git changes |
+
+**Best Practice:** Use a hybrid approach. Run **incremental scans** frequently (e.g., hourly or daily) and a **full scan** periodically (e.g., weekly or monthly) to ensure complete coverage.
 
 ---
 
@@ -575,6 +589,15 @@ BOUNCER_DIR="/home/ubuntu/bouncer"  # <-- CHANGE THIS
 
 #### 2. Set Up Your Crontab
 
+You can control the scan mode using environment variables in your crontab file.
+
+- `SCAN_MODE=full`: (Default) Runs a full scan.
+- `SCAN_MODE=incremental`: Runs an incremental scan.
+- `TIME_WINDOW="<timespan>"`: Specifies the lookback period for incremental scans (e.g., "1 hour ago", "2 days ago").
+
+Open your crontab for editing:
+
+
 Open your crontab for editing:
 
 ```bash
@@ -583,19 +606,37 @@ crontab -e
 
 Add a new line to schedule the `bouncer-cron.sh` script. See `deployment/crontab.example` for a full list of examples.
 
-**Example: Run daily at 3:00 AM**
+**Example: Full Scan (Daily Audit)**
+
+This runs a full scan every day at 2:00 AM.
 
 ```crontab
-# Run Bouncer scan every day at 3:00 AM
-0 3 * * * /home/ubuntu/bouncer/deployment/bouncer-cron.sh
+# Run a full Bouncer scan every day at 2:00 AM
+0 2 * * * SCAN_MODE=full /home/ubuntu/bouncer/deployment/bouncer-cron.sh
 ```
 
-**Example: Run every 6 hours**
+**Example: Incremental Scan (Hourly Check)**
+
+This runs an incremental scan every hour, checking only files that have changed in the last hour.
 
 ```crontab
-# Run Bouncer scan every 6 hours
-0 */6 * * * /home/ubuntu/bouncer/deployment/bouncer-cron.sh
+# Run an incremental Bouncer scan every hour
+0 * * * * SCAN_MODE=incremental TIME_WINDOW="1 hour ago" /home/ubuntu/bouncer/deployment/bouncer-cron.sh
 ```
+
+**Example: Hybrid Approach**
+
+Run an incremental scan every 4 hours and a full scan every Sunday at 3:00 AM.
+
+```crontab
+# Incremental scan every 4 hours
+0 */4 * * * SCAN_MODE=incremental TIME_WINDOW="4 hours ago" /home/ubuntu/bouncer/deployment/bouncer-cron.sh
+
+# Full scan weekly on Sunday at 3 AM
+0 3 * * 0 SCAN_MODE=full /home/ubuntu/bouncer/deployment/bouncer-cron.sh
+```
+
+See `deployment/crontab.example` for more examples and patterns.
 
 #### 3. Logging
 
@@ -604,6 +645,8 @@ Logs for each cron run are saved to the `logs` directory within your Bouncer pro
 ---
 
 ### 🪟 Windows (Task Scheduler)
+
+For Windows, you can set the `SCAN_MODE` and `TIME_WINDOW` as environment variables in the Task Scheduler UI or directly within the PowerShell script.
 
 Use Windows Task Scheduler with the provided PowerShell script for powerful, scheduled execution.
 
@@ -616,7 +659,32 @@ Edit `deployment/bouncer-scheduled.ps1` and set the `$BouncerDir` variable to th
 $BouncerDir = "C:\Users\YourUser\bouncer"  # <-- CHANGE THIS
 ```
 
-#### 2. Create a Scheduled Task
+#### 2. Create a Scheduled Task (Incremental Scan Example)
+
+This example sets up a daily incremental scan.
+
+1.  Open **Task Scheduler**.
+2.  Click **Create Task**.
+3.  **General Tab:** Name it `Bouncer Incremental Scan`.
+4.  **Triggers Tab:** Set it to run daily at your desired time.
+5.  **Actions Tab:**
+    *   Action: **Start a program**.
+    *   Program/script: `powershell.exe`
+    *   Add arguments: `-ExecutionPolicy Bypass -File "C:\path\to\bouncer\deployment\bouncer-scheduled.ps1"`
+    *   Start in: `C:\path\to\bouncer`
+6.  **Environment Variables (Optional):** To configure the scan mode, you can add environment variables to the task. This is the cleanest method.
+    *   In the task properties, go to the **Actions** tab and edit your action.
+    *   In the `Start a program` settings, you can't directly add environment variables. Instead, you can create a wrapper batch file or modify the PowerShell script to accept parameters.
+
+**Recommended Method: Modify the PowerShell script to accept parameters for more robust control.**
+
+Alternatively, for simplicity, you can directly set the variables at the top of the `bouncer-scheduled.ps1` script:
+
+```powershell
+# In deployment/bouncer-scheduled.ps1
+$ScanMode = "incremental"
+$TimeWindow = "24 hours ago"
+```
 
 1.  Open **Task Scheduler**.
 2.  Click **Create Task** in the Actions pane.

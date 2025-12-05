@@ -11,6 +11,14 @@ $LogDir = "$BouncerDir\logs"
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $LogFile = "$LogDir\bouncer_scheduled_$Timestamp.log"
 
+# Scan mode: "full" or "incremental"
+# - full: Scan all files (good for periodic audits)
+# - incremental: Only scan files changed since last run (faster, uses git)
+$ScanMode = if ($env:SCAN_MODE) { $env:SCAN_MODE } else { "full" }
+
+# For incremental mode: time window to check (e.g., "24 hours ago", "1 day ago")
+$TimeWindow = if ($env:TIME_WINDOW) { $env:TIME_WINDOW } else { "24 hours ago" }
+
 # Create log directory if it doesn't exist
 if (-not (Test-Path $LogDir)) {
     New-Item -ItemType Directory -Path $LogDir | Out-Null
@@ -35,9 +43,17 @@ if (Test-Path "$BouncerDir\.env") {
 }
 
 # Run Bouncer in batch mode
-"Running Bouncer scan..." | Out-File -FilePath $LogFile -Append -Encoding UTF8
+"Running Bouncer scan (mode: $ScanMode)..." | Out-File -FilePath $LogFile -Append -Encoding UTF8
 try {
-    python -m bouncer.main scan $BouncerDir 2>&1 | Out-File -FilePath $LogFile -Append -Encoding UTF8
+    if ($ScanMode -eq "incremental") {
+        # Incremental: only check files changed since TIME_WINDOW
+        "Checking files modified since: $TimeWindow" | Out-File -FilePath $LogFile -Append -Encoding UTF8
+        python -m bouncer.main scan $BouncerDir --git-diff --since="$TimeWindow" 2>&1 | Out-File -FilePath $LogFile -Append -Encoding UTF8
+    } else {
+        # Full: scan all files
+        "Running full scan of all files" | Out-File -FilePath $LogFile -Append -Encoding UTF8
+        python -m bouncer.main scan $BouncerDir 2>&1 | Out-File -FilePath $LogFile -Append -Encoding UTF8
+    }
     "=== Bouncer Scheduled Task Completed Successfully at $(Get-Date) ===" | Out-File -FilePath $LogFile -Append -Encoding UTF8
     exit 0
 } catch {
