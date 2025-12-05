@@ -1,0 +1,25 @@
+[Unit]
+Description=Bouncer - AI-powered file monitoring agent
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/path/to/bouncer
+Environment="PATH=/path/to/bouncer/venv/bin"
+EnvironmentFile=/path/to/bouncer/.env
+ExecStart=/path/to/bouncer/venv/bin/python -m bouncer.main start
+Restart=always
+RestartSec=10
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bouncer
+
+[Install]
+WantedBy=multi-user.target

@@ -191,6 +191,117 @@ Thanks again! 🚀
 
 ---
 
+## 🎯 Operation Modes
+
+Bouncer supports different operation modes to fit your workflow:
+
+### 1. **Monitor Mode** (Default)
+Continuously watches a directory for file changes in real-time.
+```bash
+bouncer start
+```
+
+### 2. **Report-Only Mode**
+Checks files and reports issues **without making any changes**.
+
+**Option A:** Set `auto_fix: false` for all bouncers in `bouncer.yaml`:
+```yaml
+bouncers:
+  code_quality:
+    auto_fix: false  # Report only, no fixes
+  security:
+    auto_fix: false
+  # ... repeat for all bouncers
+```
+
+**Option B:** Use CLI flag:
+```bash
+bouncer start --report-only
+```
+
+**Use when:**
+- You want to review all changes manually
+- Testing Bouncer on a new project
+- Strict change control requirements
+- Using in CI/CD pipelines
+
+### 3. **Batch Mode**
+Scan an entire directory once and generate a report.
+```bash
+bouncer scan /path/to/project
+```
+
+### 4. **Diff Mode**
+Only check files that have changed (git diff).
+```bash
+bouncer start --diff-only
+```
+
+---
+
+## 🚪 Running as a Service
+
+Run Bouncer as a background service that starts automatically.
+
+### Linux (systemd)
+
+1. Copy the service file:
+   ```bash
+   sudo cp deployment/bouncer.service /etc/systemd/system/
+   sudo nano /etc/systemd/system/bouncer.service  # Edit paths
+   ```
+
+2. Enable and start:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable bouncer
+   sudo systemctl start bouncer
+   sudo systemctl status bouncer
+   ```
+
+3. View logs:
+   ```bash
+   sudo journalctl -u bouncer -f
+   ```
+
+### macOS (launchd)
+
+1. Copy the plist file:
+   ```bash
+   cp deployment/com.bouncer.agent.plist ~/Library/LaunchAgents/
+   nano ~/Library/LaunchAgents/com.bouncer.agent.plist  # Edit paths
+   ```
+
+2. Load and start:
+   ```bash
+   launchctl load ~/Library/LaunchAgents/com.bouncer.agent.plist
+   launchctl start com.bouncer.agent
+   ```
+
+3. View logs:
+   ```bash
+   tail -f /tmp/bouncer.log
+   ```
+
+### Windows (Task Scheduler)
+
+1. Create `start-bouncer.bat`:
+   ```batch
+   @echo off
+   cd /d C:\path\to\bouncer
+   call venv\Scripts\activate.bat
+   python -m bouncer.main start
+   ```
+
+2. Open Task Scheduler and create a new task:
+   - Trigger: At startup
+   - Action: Run `start-bouncer.bat`
+   - Settings: Restart on failure
+
+**📚 Full deployment guide:** [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
+---
+
 ## 🐳 Docker Deployment
 
 For a more isolated and production-ready setup, use Docker.

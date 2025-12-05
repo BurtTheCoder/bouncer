@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.bouncer.agent</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/path/to/bouncer/venv/bin/python</string>
+        <string>-m</string>
+        <string>bouncer.main</string>
+        <string>start</string>
+    </array>
+    
+    <key>WorkingDirectory</key>
+    <string>/path/to/bouncer</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>ANTHROPIC_API_KEY</key>
+        <string>YOUR_API_KEY_HERE</string>
+        <key>SLACK_WEBHOOK_URL</key>
+        <string>YOUR_WEBHOOK_URL_HERE</string>
+    </dict>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <true/>
+    
+    <key>StandardOutPath</key>
+    <string>/tmp/bouncer.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/tmp/bouncer.error.log</string>
+</dict>
+</plist>
