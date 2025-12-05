@@ -54,34 +54,91 @@ Use Claude models through AWS Bedrock. This is a great option for teams already 
 
 **How it works:**
 - Bouncer uses your AWS credentials to invoke Claude models via the Bedrock API.
-- Authentication is handled by the AWS SDK (IAM roles, profiles, etc.).
+- Authentication is handled through AWS credentials (IAM roles, access keys, or SSO).
 
 **Setup:**
 
 1.  **Enable Claude access** in the [AWS Bedrock Console](https://aws.amazon.com/bedrock/).
-2.  **Configure your AWS credentials**. The SDK will automatically detect them from:
-    - IAM roles for EC2 instances
-    - Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
-    - Your AWS config file (`~/.aws/credentials`)
 
-3.  **Set the Bedrock environment variable** in your `.env` file:
+2.  **Choose your authentication method** and configure your `.env` file:
 
-    ```
-    # Use AWS Bedrock for authentication
-    USE_BEDROCK=true
-    
-    # Optional: Specify your AWS region
-    # AWS_REGION=us-east-1
-    ```
+**Method A: AWS Bedrock API Key (Bearer Token)**
+```
+# Enable Bedrock
+CLAUDE_CODE_USE_BEDROCK=1
+
+# Bedrock API Key
+AWS_BEARER_TOKEN_BEDROCK=your_bedrock_api_key
+
+# AWS Region
+AWS_REGION=us-east-1
+```
+
+**Method B: AWS Access Keys**
+```
+# Enable Bedrock
+CLAUDE_CODE_USE_BEDROCK=1
+
+# AWS Credentials
+AWS_ACCESS_KEY_ID=your_access_key_id
+AWS_SECRET_ACCESS_KEY=your_secret_access_key
+AWS_REGION=us-east-1
+
+# Optional: For temporary credentials
+# AWS_SESSION_TOKEN=your_session_token
+```
+
+**Method C: IAM Roles** (for EC2/ECS/Lambda)
+```
+# Enable Bedrock
+CLAUDE_CODE_USE_BEDROCK=1
+
+# AWS Region
+AWS_REGION=us-east-1
+
+# IAM role credentials are automatically detected
+```
+
+**Method D: AWS SSO**
+```bash
+# First, authenticate via AWS CLI
+aws sso login --profile your-profile
+
+# Then set environment variables
+export CLAUDE_CODE_USE_BEDROCK=1
+export AWS_REGION=us-east-1
+export AWS_PROFILE=your-profile
+```
+
+3.  **Optional: Specify Claude models for Bedrock**
+
+```
+# Default model for general operations
+ANTHROPIC_MODEL=anthropic.claude-sonnet-4-5-20250929-v1:0
+
+# Fast model for quick operations
+ANTHROPIC_FAST_MODEL=anthropic.claude-haiku-4-5-20251001-v1:0
+```
+
+**Bedrock Model IDs:**
+
+| Model | Bedrock ID |
+|-------|------------|
+| Claude Haiku 4.5 | `anthropic.claude-haiku-4-5-20251001-v1:0` |
+| Claude Sonnet 4.5 | `anthropic.claude-sonnet-4-5-20250929-v1:0` |
+| Claude Opus 4.5 | `anthropic.claude-opus-4-5-20251101-v1:0` |
 
 **Pros:**
 - ✅ Integrated with your AWS environment
 - ✅ Centralized billing and management in AWS
 - ✅ Enhanced security with IAM roles
+- ✅ Multiple authentication methods (API key, access keys, IAM, SSO)
+- ✅ No separate Anthropic API key needed
 
 **Cons:**
-- ❌ Model availability and features may differ from the direct Anthropic API
-- ❌ Requires AWS setup and configuration
+- ❌ Model IDs differ from direct Anthropic API
+- ❌ Requires AWS Bedrock setup and model access enablement
+- ❌ Regional availability may vary
 
 ---
 
@@ -200,8 +257,31 @@ Here’s a summary of all the environment variables you can use in your `.env` f
 ANTHROPIC_API_KEY=your_api_key_here
 
 # Option 2: AWS Bedrock
-# USE_BEDROCK=true
+# Choose ONE of these Bedrock authentication methods:
+
+# Method A: Bedrock API Key
+# CLAUDE_CODE_USE_BEDROCK=1
+# AWS_BEARER_TOKEN_BEDROCK=your_bedrock_api_key
 # AWS_REGION=us-east-1
+
+# Method B: AWS Access Keys
+# CLAUDE_CODE_USE_BEDROCK=1
+# AWS_ACCESS_KEY_ID=your_access_key_id
+# AWS_SECRET_ACCESS_KEY=your_secret_access_key
+# AWS_REGION=us-east-1
+
+# Method C: IAM Roles (credentials auto-detected)
+# CLAUDE_CODE_USE_BEDROCK=1
+# AWS_REGION=us-east-1
+
+# Method D: AWS SSO
+# CLAUDE_CODE_USE_BEDROCK=1
+# AWS_REGION=us-east-1
+# AWS_PROFILE=your-profile
+
+# Optional Bedrock models:
+# ANTHROPIC_MODEL=anthropic.claude-sonnet-4-5-20250929-v1:0
+# ANTHROPIC_FAST_MODEL=anthropic.claude-haiku-4-5-20251001-v1:0
 
 # Option 3: Google Vertex AI
 # USE_VERTEX=true
