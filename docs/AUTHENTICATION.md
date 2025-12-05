@@ -158,22 +158,33 @@ Set the `CLAUDE_MODEL` environment variable in your `.env` file. If not set, it 
 
 **Available Models:**
 
-- `claude-3-opus-20240229` (Most powerful)
-- `claude-3-sonnet-20240229` (Balanced)
-- `claude-3-haiku-20240307` (Fastest)
+| Model | API ID | Description | Best For |
+|-------|--------|-------------|----------|
+| **Claude Haiku 4.5** | `claude-haiku-4-5-20251001` | Fastest model with near-frontier intelligence | Speed and cost-effectiveness |
+| **Claude Sonnet 4.5** | `claude-sonnet-4-5-20250929` | Smart model for complex agents and coding | Balanced intelligence and speed |
+| **Claude Opus 4.5** | `claude-opus-4-5-20251101` | Premium model with maximum intelligence | Complex reasoning and analysis |
+
+**Model Aliases** (auto-update to latest):
+- `claude-haiku-4-5` → Latest Haiku
+- `claude-sonnet-4-5` → Latest Sonnet  
+- `claude-opus-4-5` → Latest Opus
 
 **Example:**
 
 ```
 # .env file
 
-# Use Claude 3 Haiku for speed and cost-effectiveness
-CLAUDE_MODEL=claude-3-haiku-20240307
+# Use Claude Haiku 4.5 for speed and cost-effectiveness (recommended for Bouncer)
+CLAUDE_MODEL=claude-haiku-4-5-20251001
+
+# Or use the alias (auto-updates to latest version)
+CLAUDE_MODEL=claude-haiku-4-5
 ```
 
 **Recommendation:**
-- For most Bouncer tasks, **Haiku** is an excellent choice. It's fast, affordable, and powerful enough for quality checks.
-- For complex analysis (e.g., deep security reviews), consider using **Sonnet** or **Opus**.
+- For most Bouncer tasks, **Haiku 4.5** is an excellent choice. It's fast, affordable, and has near-frontier intelligence perfect for quality checks.
+- For complex analysis (e.g., deep security reviews, complex agents), consider using **Sonnet 4.5**.
+- For maximum intelligence on the most complex tasks, use **Opus 4.5**.
 
 ---
 
@@ -203,14 +214,19 @@ ANTHROPIC_API_KEY=your_api_key_here
 # --- Model Selection --- 
 # Optional: Defaults to the latest recommended model
 
-# Use Haiku for speed and cost
-CLAUDE_MODEL=claude-3-haiku-20240307
+# Use Haiku 4.5 for speed and cost (recommended)
+CLAUDE_MODEL=claude-haiku-4-5-20251001
 
-# Or use Sonnet for more power
-# CLAUDE_MODEL=claude-3-sonnet-20240229
+# Or use Sonnet 4.5 for more power
+# CLAUDE_MODEL=claude-sonnet-4-5-20250929
 
-# Or use Opus for maximum power
-# CLAUDE_MODEL=claude-3-opus-20240229
+# Or use Opus 4.5 for maximum intelligence
+# CLAUDE_MODEL=claude-opus-4-5-20251101
+
+# Or use aliases (auto-update to latest)
+# CLAUDE_MODEL=claude-haiku-4-5
+# CLAUDE_MODEL=claude-sonnet-4-5
+# CLAUDE_MODEL=claude-opus-4-5
 
 # --- Other Settings ---
 SLACK_WEBHOOK_URL=your_slack_webhook_url
