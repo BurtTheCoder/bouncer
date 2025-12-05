@@ -165,3 +165,128 @@ class BouncerOrchestrator:
         self.running = False
         await asyncio.sleep(1)  # Allow cleanup
         logger.info("👋 Bouncer stopped")
+
+    async def scan(self, target_dir: Path, git_diff: bool = False, since: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Scan a directory in batch mode
+        
+        Args:
+            target_dir: Directory to scan
+            git_diff: If True, only scan files in git diff
+            since: Time window for git diff (e.g., "1 hour ago", "24 hours ago")
+        
+        Returns:
+            Dictionary with scan results and summary
+        """
+        logger.info("🔍 Starting batch scan...")
+        logger.info(f"📁 Target: {target_dir}")
+        logger.info(f"🎯 Active bouncers: {', '.join(self.bouncers.keys())}")
+        
+        # Get files to scan
+        if git_diff:
+            logger.info(f"📊 Mode: Incremental (git diff since {since or 'last commit'})")
+            files = await self._get_git_changed_files(target_dir, since)
+        else:
+            logger.info("📊 Mode: Full scan")
+            files = await self._get_all_files(target_dir)
+        
+        if not files:
+            logger.info("✅ No files to scan")
+            return {
+                'status': 'success',
+                'files_scanned': 0,
+                'issues_found': 0,
+                'fixes_applied': 0,
+                'results': []
+            }
+        
+        logger.info(f"📝 Found {len(files)} files to scan")
+        
+        # Process each file
+        all_results = []
+        total_issues = 0
+        total_fixes = 0
+        
+        for file_path in files:
+            # Create a file change event
+            event = FileChangeEvent(
+                path=file_path,
+                event_type='modified',
+                timestamp=datetime.now().timestamp(),
+                metadata={'scan_mode': 'batch'}
+            )
+            
+            # Process through bouncers
+            results = await self.process_event(event)
+            all_results.extend(results)
+            
+            # Count issues and fixes
+            for result in results:
+                total_issues += len(result.issues_found)
+                total_fixes += len(result.fixes_applied)
+        
+        # Generate summary
+        summary = {
+            'status': 'success',
+            'files_scanned': len(files),
+            'issues_found': total_issues,
+            'fixes_applied': total_fixes,
+            'results': all_results
+        }
+        
+        logger.info("✅ Scan complete!")
+        logger.info(f"📊 Files scanned: {len(files)}")
+        logger.info(f"⚠️  Issues found: {total_issues}")
+        logger.info(f"🔧 Fixes applied: {total_fixes}")
+        
+        return summary
+    
+    async def _get_all_files(self, target_dir: Path) -> List[Path]:
+        """Get all files in directory (excluding ignored patterns)"""
+        files = []
+        
+        for path in target_dir.rglob('*'):
+            if path.is_file() and not self.should_ignore(path):
+                files.append(path)
+        
+        return files
+    
+    async def _get_git_changed_files(self, target_dir: Path, since: Optional[str] = None) -> List[Path]:
+        """Get files changed in git since a specific time"""
+        import subprocess
+        
+        try:
+            # Build git command
+            if since:
+                # Get files changed since a specific time
+                cmd = ['git', '-C', str(target_dir), 'diff', '--name-only', f'@{{"{since}"}}', 'HEAD']
+            else:
+                # Get files changed since last commit
+                cmd = ['git', '-C', str(target_dir), 'diff', '--name-only', 'HEAD~1', 'HEAD']
+            
+            # Run git command
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            # Parse output
+            files = []
+            for line in result.stdout.strip().split('\n'):
+                if line:
+                    file_path = target_dir / line.strip()
+                    if file_path.exists() and file_path.is_file() and not self.should_ignore(file_path):
+                        files.append(file_path)
+            
+            return files
+            
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Git command failed: {e}")
+            logger.warning("Falling back to full scan")
+            return await self._get_all_files(target_dir)
+        except Exception as e:
+            logger.error(f"Error getting git changed files: {e}")
+            logger.warning("Falling back to full scan")
+            return await self._get_all_files(target_dir)

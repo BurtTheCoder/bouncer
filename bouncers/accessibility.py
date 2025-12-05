@@ -28,7 +28,7 @@ class AccessibilityBouncer(BaseBouncer):
     async def check(self, event):
         """Check for accessibility issues"""
         from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
-from .schemas import BOUNCER_OUTPUT_SCHEMA
+        from .schemas import BOUNCER_OUTPUT_SCHEMA
         
         logger.info(f"♿ Accessibility Bouncer checking: {event.path.name}")
         

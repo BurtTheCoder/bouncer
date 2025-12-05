@@ -149,7 +149,7 @@ Examples:
     
     parser.add_argument(
         'command',
-        choices=['start', 'init', 'version'],
+        choices=['start', 'scan', 'init', 'version'],
         help='Command to execute'
     )
     
@@ -164,6 +164,25 @@ Examples:
         '--verbose', '-v',
         action='store_true',
         help='Enable verbose logging'
+    )
+    
+    parser.add_argument(
+        'target_dir',
+        type=Path,
+        nargs='?',
+        help='Target directory to scan (required for scan command)'
+    )
+    
+    parser.add_argument(
+        '--git-diff',
+        action='store_true',
+        help='Only scan files in git diff (incremental mode)'
+    )
+    
+    parser.add_argument(
+        '--since',
+        type=str,
+        help='Time window for git diff (e.g., "1 hour ago", "24 hours ago")'
     )
     
     args = parser.parse_args()
@@ -193,6 +212,63 @@ Examples:
         logger.info(f"✅ Created default config: {args.config}")
         logger.info("Edit the config file and run: bouncer start")
         return
+    
+    elif args.command == 'scan':
+        # Validate target directory
+        if not args.target_dir:
+            logger.error("Target directory is required for scan command")
+            logger.info("Usage: bouncer scan /path/to/directory")
+            sys.exit(1)
+        
+        if not args.target_dir.exists():
+            logger.error(f"Target directory does not exist: {args.target_dir}")
+            sys.exit(1)
+        
+        # Load config
+        try:
+            config = ConfigLoader.load(args.config)
+        except FileNotFoundError:
+            logger.warning(f"Config file not found: {args.config}")
+            logger.info("Using default configuration")
+            config = ConfigLoader.get_default_config()
+        except Exception as e:
+            logger.error(f"Failed to load config: {e}")
+            sys.exit(1)
+        
+        # Override watch_dir with target_dir
+        config['watch_dir'] = str(args.target_dir)
+        
+        # Create orchestrator
+        orchestrator = create_orchestrator(config)
+        
+        # Run scan
+        logger.info("🔍 Starting Bouncer scan...")
+        
+        try:
+            summary = await orchestrator.scan(
+                target_dir=args.target_dir,
+                git_diff=args.git_diff,
+                since=args.since
+            )
+            
+            # Print summary
+            logger.info("\n" + "="*50)
+            logger.info("📊 SCAN SUMMARY")
+            logger.info("="*50)
+            logger.info(f"Files scanned: {summary['files_scanned']}")
+            logger.info(f"Issues found: {summary['issues_found']}")
+            logger.info(f"Fixes applied: {summary['fixes_applied']}")
+            logger.info("="*50)
+            
+            # Exit with appropriate code
+            if summary['issues_found'] > 0:
+                sys.exit(1)  # Exit with error if issues found
+            else:
+                sys.exit(0)  # Success
+                
+        except Exception as e:
+            logger.error(f"❌ Scan failed: {e}", exc_info=True)
+            sys.exit(1)
     
     elif args.command == 'start':
         # Load config
