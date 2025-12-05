@@ -29,7 +29,7 @@ class DependencyBouncer(BaseBouncer):
     async def check(self, event):
         """Check dependency files"""
         from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
-from .schemas import BOUNCER_OUTPUT_SCHEMA
+        from .schemas import BOUNCER_OUTPUT_SCHEMA
         
         logger.info(f"📦 Dependency Bouncer checking: {event.path.name}")
         

@@ -28,13 +28,13 @@ class DocumentationBouncer(BaseBouncer):
     async def check(self, event):
         """Check documentation quality"""
         from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
-from .schemas import BOUNCER_OUTPUT_SCHEMA
+        from .schemas import BOUNCER_OUTPUT_SCHEMA
         
         logger.info(f"📚 Docs Bouncer checking: {event.path.name}")
         
         options = ClaudeAgentOptions(
-            cwd=str(event.path.parent,
-            structured_output=BOUNCER_OUTPUT_SCHEMA),
+            cwd=str(event.path.parent),
+            structured_output=BOUNCER_OUTPUT_SCHEMA,
             allowed_tools=["Read", "Write"],
             permission_mode="acceptEdits" if self.auto_fix else "plan",
             system_prompt=self._get_system_prompt()

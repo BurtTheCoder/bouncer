@@ -28,7 +28,7 @@ class InfrastructureBouncer(BaseBouncer):
     async def check(self, event):
         """Check infrastructure files"""
         from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
-from .schemas import BOUNCER_OUTPUT_SCHEMA
+        from .schemas import BOUNCER_OUTPUT_SCHEMA
         
         logger.info(f"🏗️  Infrastructure Bouncer checking: {event.path.name}")
         

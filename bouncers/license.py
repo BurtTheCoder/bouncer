@@ -28,7 +28,7 @@ class LicenseBouncer(BaseBouncer):
     async def check(self, event):
         """Check for license and legal issues"""
         from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
-from .schemas import BOUNCER_OUTPUT_SCHEMA
+        from .schemas import BOUNCER_OUTPUT_SCHEMA
         
         logger.info(f"⚖️  License Bouncer checking: {event.path.name}")
         
