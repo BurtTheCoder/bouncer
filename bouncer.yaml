@@ -1,0 +1,89 @@
+# Bouncer Configuration
+# Quality control at the door
+
+# Directory to watch
+watch_dir: .
+
+# Debounce delay in seconds (wait for file changes to settle)
+debounce_delay: 2
+
+# Patterns to ignore
+ignore_patterns:
+  - .git
+  - node_modules
+  - __pycache__
+  - "*.pyc"
+  - venv
+  - .env
+  - .bouncer
+
+# Bouncer Configuration
+bouncers:
+  # Code Quality Bouncer
+  code_quality:
+    enabled: true
+    file_types:
+      - .py
+      - .js
+      - .ts
+      - .jsx
+      - .tsx
+    auto_fix: true
+    checks:
+      - syntax
+      - linting
+      - formatting
+  
+  # Security Bouncer
+  security:
+    enabled: true
+    file_types:
+      - .py
+      - .js
+      - .ts
+      - .java
+      - .go
+      - .rb
+    auto_fix: false  # Never auto-fix security issues
+    severity_threshold: medium
+  
+  # Documentation Bouncer
+  documentation:
+    enabled: true
+    file_types:
+      - .md
+      - .rst
+      - .txt
+    auto_fix: true
+    checks:
+      - links
+      - spelling
+      - formatting
+  
+  # Data Validation Bouncer
+  data_validation:
+    enabled: true
+    file_types:
+      - .json
+      - .yaml
+      - .yml
+      - .csv
+    auto_fix: true
+    checks:
+      - schema
+      - formatting
+
+# Notification Configuration
+notifications:
+  # Slack notifications
+  slack:
+    enabled: false
+    webhook_url: ${SLACK_WEBHOOK_URL}
+    channel: "#bouncer"
+    min_severity: warning  # info, warning, denied, error
+  
+  # File logging
+  file_log:
+    enabled: true
+    log_dir: .bouncer/logs
+    rotation: daily  # daily, weekly, monthly, none
