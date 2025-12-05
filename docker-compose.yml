@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  bouncer:
+    build: .
+    container_name: bouncer
+    volumes:
+      # Mount your project directory to watch
+      - ./your-project:/app/watch:ro
+      # Mount config
+      - ./bouncer.yaml:/app/bouncer.yaml:ro
+      # Mount logs
+      - ./.bouncer/logs:/app/.bouncer/logs
+      - ./.bouncer/audit:/app/.bouncer/audit
+    environment:
+      # Slack webhook (optional)
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      # Claude API key (if needed)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

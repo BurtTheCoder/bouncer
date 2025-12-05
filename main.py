@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""
+Bouncer - Quality control at the door
+Main entry point
+"""
+
+import asyncio
+import argparse
+import logging
+import sys
+from pathlib import Path
+
+from bouncer import BouncerOrchestrator, ConfigLoader
+from bouncers import (
+    CodeQualityBouncer,
+    SecurityBouncer,
+    DocumentationBouncer,
+    DataValidationBouncer
+)
+from notifications import SlackNotifier, FileLoggerNotifier
+
+
+def setup_logging(verbose: bool = False):
+    """Setup logging configuration"""
+    level = logging.DEBUG if verbose else logging.INFO
+    
+    logging.basicConfig(
+        level=level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler('.bouncer/bouncer.log')
+        ]
+    )
+    
+    # Create log directory
+    Path('.bouncer').mkdir(exist_ok=True)
+
+
+def create_orchestrator(config: dict) -> BouncerOrchestrator:
+    """Create and configure the bouncer orchestrator"""
+    orchestrator = BouncerOrchestrator(config)
+    
+    # Register bouncers based on config
+    bouncer_config = config.get('bouncers', {})
+    
+    if bouncer_config.get('code_quality', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'code_quality',
+            CodeQualityBouncer(bouncer_config.get('code_quality', {}))
+        )
+    
+    if bouncer_config.get('security', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'security',
+            SecurityBouncer(bouncer_config.get('security', {}))
+        )
+    
+    if bouncer_config.get('documentation', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'documentation',
+            DocumentationBouncer(bouncer_config.get('documentation', {}))
+        )
+    
+    if bouncer_config.get('data_validation', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'data_validation',
+            DataValidationBouncer(bouncer_config.get('data_validation', {}))
+        )
+    
+    # Register notifiers
+    notifications_config = config.get('notifications', {})
+    
+    if notifications_config.get('slack', {}).get('enabled', False):
+        orchestrator.register_notifier(
+            SlackNotifier(notifications_config.get('slack', {}))
+        )
+    
+    if notifications_config.get('file_log', {}).get('enabled', True):
+        orchestrator.register_notifier(
+            FileLoggerNotifier(notifications_config.get('file_log', {}))
+        )
+    
+    return orchestrator
+
+
+async def main():
+    """Main entry point"""
+    parser = argparse.ArgumentParser(
+        description='Bouncer - Quality control at the door',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  bouncer start                    # Start with default config
+  bouncer start --config custom.yaml
+  bouncer init                     # Create default config
+  bouncer --verbose start          # Start with debug logging
+        """
+    )
+    
+    parser.add_argument(
+        'command',
+        choices=['start', 'init', 'version'],
+        help='Command to execute'
+    )
+    
+    parser.add_argument(
+        '--config',
+        type=Path,
+        default=Path('bouncer.yaml'),
+        help='Path to configuration file (default: bouncer.yaml)'
+    )
+    
+    parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Enable verbose logging'
+    )
+    
+    args = parser.parse_args()
+    
+    # Setup logging
+    setup_logging(args.verbose)
+    logger = logging.getLogger(__name__)
+    
+    # Handle commands
+    if args.command == 'version':
+        from bouncer import __version__
+        print(f"Bouncer v{__version__}")
+        return
+    
+    elif args.command == 'init':
+        # Create default config
+        if args.config.exists():
+            logger.error(f"Config file already exists: {args.config}")
+            sys.exit(1)
+        
+        import yaml
+        default_config = ConfigLoader.get_default_config()
+        
+        with open(args.config, 'w') as f:
+            yaml.dump(default_config, f, default_flow_style=False, sort_keys=False)
+        
+        logger.info(f"✅ Created default config: {args.config}")
+        logger.info("Edit the config file and run: bouncer start")
+        return
+    
+    elif args.command == 'start':
+        # Load config
+        try:
+            config = ConfigLoader.load(args.config)
+        except FileNotFoundError:
+            logger.error(f"Config file not found: {args.config}")
+            logger.info("Run 'bouncer init' to create a default config")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"Failed to load config: {e}")
+            sys.exit(1)
+        
+        # Create orchestrator
+        orchestrator = create_orchestrator(config)
+        
+        # Start bouncer
+        logger.info("🚪 Starting Bouncer...")
+        
+        try:
+            await orchestrator.start()
+        except KeyboardInterrupt:
+            logger.info("\n🛑 Received interrupt signal")
+            await orchestrator.stop()
+        except Exception as e:
+            logger.error(f"❌ Fatal error: {e}", exc_info=True)
+            sys.exit(1)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
