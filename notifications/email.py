@@ -5,6 +5,7 @@ Sends bouncer results via email (SMTP)
 
 import smtplib
 import logging
+from .formatter import NotificationFormatter
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Dict, Any
@@ -17,6 +18,8 @@ class EmailNotifier:
     """Send notifications via email"""
     
     def __init__(self, config: Dict[str, Any]):
+        self.detail_level = config.get('detail_level', 'summary')
+        self.formatter = NotificationFormatter(self.detail_level)
         self.enabled = config.get('enabled', False)
         self.smtp_host = config.get('smtp_host')
         self.smtp_port = config.get('smtp_port', 587)
