@@ -440,6 +440,7 @@ Bouncer uses a team of specialized sub-agents to check different types of files.
 
 ## 📖 Documentation
 
+- **[Notification Channels](docs/NOTIFICATIONS.md)** - Slack, Discord, Email, Teams, and more
 - **[Environment Variables](docs/ENVIRONMENT_VARIABLES.md)** - Configuration overrides via env vars
 - **[Authentication](docs/AUTHENTICATION.md)** - API keys and cloud provider setup
 - **[Deployment](docs/DEPLOYMENT.md)** - Running as a service

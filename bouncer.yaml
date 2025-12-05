@@ -190,7 +190,42 @@ notifications:
     channel: "#bouncer"
     min_severity: warning  # info, warning, denied, error
   
-  # File logging
+  # Discord notifications
+  discord:
+    enabled: false
+    webhook_url: ${DISCORD_WEBHOOK_URL}
+    username: "Bouncer Bot"
+    min_severity: warning
+  
+  # Email notifications (SMTP)
+  email:
+    enabled: false
+    smtp_host: ${SMTP_HOST}
+    smtp_port: 587
+    smtp_user: ${SMTP_USER}
+    smtp_password: ${SMTP_PASSWORD}
+    from_email: "bouncer@your-domain.com"
+    to_emails:
+      - "team@your-domain.com"
+    use_tls: true
+    min_severity: error
+  
+  # Microsoft Teams notifications
+  teams:
+    enabled: false
+    webhook_url: ${TEAMS_WEBHOOK_URL}
+    min_severity: warning
+  
+  # Generic webhook (for custom integrations)
+  webhook:
+    enabled: false
+    webhook_url: ${GENERIC_WEBHOOK_URL}
+    method: POST  # POST or PUT
+    headers:
+      Authorization: "Bearer ${WEBHOOK_SECRET}"
+    min_severity: info
+  
+  # File logging (JSON)
   file_log:
     enabled: true
     log_dir: .bouncer/logs
