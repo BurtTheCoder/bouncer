@@ -14,6 +14,7 @@ from .license import LicenseBouncer
 from .infrastructure import InfrastructureBouncer
 from .api_contract import APIContractBouncer
 from .dependency import DependencyBouncer
+from .obsidian import ObsidianBouncer
 
 __all__ = [
     'BaseBouncer',
@@ -26,5 +27,6 @@ __all__ = [
     'LicenseBouncer',
     'InfrastructureBouncer',
     'APIContractBouncer',
-    'DependencyBouncer'
+    'DependencyBouncer',
+    'ObsidianBouncer'
 ]

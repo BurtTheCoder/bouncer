@@ -150,6 +150,36 @@ bouncers:
     auto_fix: false  # Never auto-update dependencies
     severity_threshold: medium
     check_updates: true
+  
+  # Obsidian Bouncer
+  obsidian:
+    enabled: true
+    file_types:
+      - .md
+    auto_fix: true
+    
+    # Frontmatter settings
+    required_fields:
+      - tags
+      - created
+    
+    # Tag settings
+    tag_format: kebab-case  # kebab-case, camelCase, snake_case
+    max_tags: 10
+    
+    # Link settings
+    check_broken_links: true
+    suggest_connections: true
+    min_connections: 1  # Warn about isolated notes
+    
+    # Content settings
+    min_note_length: 50  # characters
+    require_headings: true
+    
+    # Vault structure
+    attachment_folder: attachments
+    template_folder: templates
+    daily_notes_folder: daily
 
 # Notification Configuration
 notifications:

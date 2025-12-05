@@ -21,7 +21,8 @@ from bouncers import (
     LicenseBouncer,
     InfrastructureBouncer,
     APIContractBouncer,
-    DependencyBouncer
+    DependencyBouncer,
+    ObsidianBouncer
 )
 from notifications import SlackNotifier, FileLoggerNotifier
 
@@ -108,6 +109,12 @@ def create_orchestrator(config: dict) -> BouncerOrchestrator:
         orchestrator.register_bouncer(
             'dependency',
             DependencyBouncer(bouncer_config.get('dependency', {}))
+        )
+    
+    if bouncer_config.get('obsidian', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'obsidian',
+            ObsidianBouncer(bouncer_config.get('obsidian', {}))
         )
     
     # Register notifiers

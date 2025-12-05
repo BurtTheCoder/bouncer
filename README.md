@@ -13,7 +13,7 @@ Think of it as a bouncer at a club - only quality gets past the door.
 
 ## ✨ Features
 
-- **🎯 10 Specialized Bouncers**: Expert agents for Code Quality, Security, Documentation, Data, Performance, Accessibility, License, Infrastructure, API Contracts, and Dependencies.
+- **🎯 11 Specialized Bouncers**: Expert agents for Code Quality, Security, Documentation, Data, Performance, Accessibility, License, Infrastructure, API Contracts, Dependencies, and Obsidian knowledge management.
 - **🔧 Auto-Fix**: Automatically fixes formatting, linting, and other safe-to-fix issues.
 - **🚨 Real-time Alerts**: Instant notifications via Slack, with more options coming soon.
 - **🎛️ Fully Configurable**: Fine-tune everything with a simple `bouncer.yaml` file.
@@ -179,6 +179,12 @@ Bouncer uses a team of specialized sub-agents to check different types of files.
 
 - **Checks**: Known CVEs, outdated dependencies, license conflicts.
 - **Fixes**: Reports vulnerabilities (never auto-updates dependencies).
+
+### 🧠 Obsidian Bouncer
+
+- **Checks**: Broken wikilinks, frontmatter validation, tag management, orphaned notes, knowledge graph health.
+- **Fixes**: Fixes broken links, adds missing frontmatter, standardizes tags, suggests connections.
+- **[Full Documentation](docs/OBSIDIAN_BOUNCER.md)** - Complete guide to Obsidian Bouncer features
 
 ---
 
