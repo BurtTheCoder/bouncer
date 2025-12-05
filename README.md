@@ -13,11 +13,12 @@ Think of it as a bouncer at a club - only quality gets past the door.
 
 ## ✨ Features
 
-- **🎯 11 Specialized Bouncers**: Expert agents for Code Quality, Security, Documentation, Data, Performance, Accessibility, License, Infrastructure, API Contracts, Dependencies, and Obsidian knowledge management.
+- **🎯 12 Specialized Bouncers**: Expert agents for Code Quality, Security, Documentation, Data, Performance, Accessibility, License, Infrastructure, API Contracts, Dependencies, Obsidian knowledge management, and Log Investigation.
 - **🔧 Auto-Fix**: Automatically fixes formatting, linting, and other safe-to-fix issues.
-- **🚨 Real-time Alerts**: Instant notifications via Slack, with more options coming soon.
+- **🔗 MCP Integrations**: Automatically create GitHub PRs, GitLab MRs, Linear issues, and Jira tickets from bouncer findings.
+- **🚨 Real-time Alerts**: Instant notifications via Slack and Discord.
 - **🎛️ Fully Configurable**: Fine-tune everything with a simple `bouncer.yaml` file.
-- **🐳 Easy Deployment**: Run as a standalone script or as a Docker container.
+- **🐳 Easy Deployment**: Run as a standalone script, Docker container, or scheduled cron job.
 - **🛡️ Security First**: Pre-write hooks prevent dangerous changes and hardcoded secrets.
 - **🧩 Modular by Design**: Easily extend Bouncer with your own bouncers and checks.
 
@@ -444,14 +445,57 @@ Bouncer uses a team of specialized sub-agents to check different types of files.
 - **Fixes**: Fixes broken links, adds missing frontmatter, standardizes tags, suggests connections.
 - **[Full Documentation](docs/OBSIDIAN_BOUNCER.md)** - Complete guide to Obsidian Bouncer features
 
+### 🔍 Log Investigator Bouncer
+
+- **Checks**: Application logs for errors, stack traces, and exceptions.
+- **Investigates**: Codebase to find root causes of errors.
+- **Suggests**: Fixes for common error patterns and defensive programming practices.
+- **[Full Documentation](docs/LOG_INVESTIGATOR.md)** - Complete guide to Log Investigator features
+
 ---
 
-## 📖 Documentation
+## 🔗 MCP Integrations
 
+Bouncer integrates with external services using the **Model Context Protocol (MCP)** to automatically create pull requests, issues, and tickets from bouncer findings.
+
+### Supported Integrations
+
+- **GitHub** - Automatically create PRs with fixes and issues for manual review
+- **GitLab** - Create merge requests and issues
+- **Linear** - Create and track issues in Linear
+- **Jira** - Create tickets for bouncer findings
+
+### Quick Setup
+
+1. **Configure integrations** in `bouncer.yaml`:
+   ```yaml
+   integrations:
+     github:
+       enabled: true
+       auto_create_pr: false  # Ask before creating
+       auto_create_issue: false
+   ```
+
+2. **Set environment variables**:
+   ```bash
+   GITHUB_PERSONAL_ACCESS_TOKEN=ghp_your_token_here
+   LINEAR_API_KEY=lin_api_your_key_here
+   ```
+
+3. **Run Bouncer** - PRs and issues are created automatically!
+
+**[Full MCP Integration Guide](docs/MCP_INTEGRATIONS.md)** - Complete setup and usage documentation
+
+---
+
+## 📚 Documentation
+
+- **[MCP Integrations](docs/MCP_INTEGRATIONS.md)** - GitHub, GitLab, Linear, Jira integration guide
+- **[Log Investigator](docs/LOG_INVESTIGATOR.md)** - Monitor logs and investigate errors
 - **[Notification Channels](docs/NOTIFICATIONS.md)** - Slack, Discord, Email, Teams, and more
 - **[Environment Variables](docs/ENVIRONMENT_VARIABLES.md)** - Configuration overrides via env vars
 - **[Authentication](docs/AUTHENTICATION.md)** - API keys and cloud provider setup
-- **[Deployment](docs/DEPLOYMENT.md)** - Running as a service
+- **[Deployment](docs/DEPLOYMENT.md)** - Running as a service or scheduled cron job
 - **[Obsidian Bouncer Guide](docs/OBSIDIAN_BOUNCER.md)** - Specialized guide for Obsidian vaults
 - **[Creating Custom Bouncers](docs/CREATING_BOUNCERS.md)** - Guide to building your own bouncers
 

@@ -1,0 +1,101 @@
+# Example Configuration with MCP Integrations
+#
+# This configuration shows how to enable GitHub, GitLab, Linear, and Jira
+# integrations to automatically create PRs, issues, and tickets from bouncer results.
+
+watch_dir: "/path/to/your/project"
+
+bouncers:
+  # Enable bouncers as needed
+  code_quality:
+    enabled: true
+    auto_fix: false
+  
+  security:
+    enabled: true
+    auto_fix: false
+  
+  log_investigator:
+    enabled: true
+    auto_fix: false
+    log_dir: "/var/log/myapp"
+    codebase_dir: "/path/to/codebase"
+
+# MCP Integrations Configuration
+integrations:
+  # GitHub Integration
+  github:
+    enabled: true
+    auto_create_pr: false  # Ask before creating PRs
+    auto_create_issue: false  # Ask before creating issues
+    branch_prefix: "bouncer"  # Prefix for auto-generated branches
+    
+    # Optional: Default labels for issues
+    default_labels:
+      - "bouncer"
+      - "automated"
+    
+    # Optional: Default assignees
+    default_assignees: []
+  
+  # GitLab Integration
+  gitlab:
+    enabled: false
+    auto_create_mr: false  # Ask before creating Merge Requests
+    auto_create_issue: false
+    branch_prefix: "bouncer"
+    
+    # Optional: Target project
+    project_id: ""
+  
+  # Linear Integration
+  linear:
+    enabled: false
+    auto_create_issue: true  # Auto-create issues for errors
+    
+    # Required: Linear project/team IDs
+    project_id: "PROJ-123"
+    team_id: "TEAM-456"
+    
+    # Optional: Default priority
+    default_priority: "medium"  # low, medium, high, urgent
+  
+  # Jira Integration
+  jira:
+    enabled: false
+    auto_create_ticket: false
+    
+    # Required: Jira project key
+    project_key: "PROJ"
+    
+    # Optional: Default issue type
+    default_issue_type: "Bug"
+    
+    # Optional: Default priority
+    default_priority: "Medium"
+
+notifications:
+  # Slack notifications
+  slack:
+    enabled: true
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    detail_level: "detailed"
+    
+    # Notify about integration actions
+    notify_on_pr_created: true
+    notify_on_issue_created: true
+  
+  # File logger
+  file_log:
+    enabled: true
+    log_file: ".bouncer/bouncer.json"
+
+# Ignore patterns
+ignore_patterns:
+  - ".git"
+  - "node_modules"
+  - "__pycache__"
+  - "venv"
+  - ".bouncer"
+  - "*.tmp"
+  - "*.bak"
