@@ -1,0 +1,55 @@
+# Dockerfile for Bouncer with Cron
+#
+# This Dockerfile creates a container that runs Bouncer on a schedule using cron.
+# Useful for containerized environments where you want periodic scanning.
+#
+
+FROM python:3.11-slim
+
+# Install cron and required dependencies
+RUN apt-get update && apt-get install -y \
+    cron \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create bouncer user
+RUN useradd -m -s /bin/bash bouncer
+
+# Set working directory
+WORKDIR /app
+
+# Copy application files
+COPY . /app/
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create logs directory
+RUN mkdir -p /app/logs && chown -R bouncer:bouncer /app/logs
+
+# Copy cron wrapper script
+COPY deployment/bouncer-cron.sh /usr/local/bin/bouncer-cron.sh
+RUN chmod +x /usr/local/bin/bouncer-cron.sh
+
+# Create crontab file
+# Default: Run every hour at minute 0
+RUN echo "0 * * * * bouncer /usr/local/bin/bouncer-cron.sh" > /etc/cron.d/bouncer-cron
+
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/bouncer-cron
+
+# Apply cron job
+RUN crontab -u bouncer /etc/cron.d/bouncer-cron
+
+# Create the log file to be able to run tail
+RUN touch /var/log/cron.log
+
+# Set ownership
+RUN chown -R bouncer:bouncer /app
+
+# Switch to bouncer user
+USER bouncer
+
+# Run cron in foreground and tail the log
+CMD cron && tail -f /var/log/cron.log /app/logs/bouncer_cron_*.log

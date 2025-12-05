@@ -535,3 +535,164 @@ Shows:
 ---
 
 **Questions?** Open an issue on GitHub!
+
+
+---
+
+## ⏰ Scheduled Execution (Cron & Task Scheduler)
+
+While Bouncer excels at real-time monitoring, you can also run it on a schedule for periodic audits, batch processing, or off-hours scanning. This is ideal for environments where continuous monitoring is unnecessary or resource-intensive.
+
+Scheduled execution uses **Batch Mode** (`bouncer scan`) to check an entire directory at specified intervals.
+
+### When to Use Scheduled Execution vs. Continuous Monitoring
+
+| Use Case | Continuous Monitoring (`bouncer start`) | Scheduled Execution (`bouncer scan`) |
+| :--- | :--- | :--- |
+| **Real-time Feedback** | ✅ **Ideal** | ❌ **Not suitable** |
+| **Active Development** | ✅ **Ideal** | ❌ **Too slow** |
+| **CI/CD Integration** | ✅ **On commit/PR** | ❌ **Too slow** |
+| **Scheduled Audits** | ❌ **Overkill** | ✅ **Ideal** |
+| **Off-hours Scanning** | ❌ **Inefficient** | ✅ **Ideal** |
+| **Batch Processing** | ❌ **Not designed for it** | ✅ **Ideal** |
+| **Low-resource Environments** | ❌ **Can be resource-intensive** | ✅ **Resource-friendly** |
+| **Legacy Codebases** | ❌ **Can be noisy** | ✅ **Good for periodic checks** |
+
+---
+
+### 🐧 Linux & macOS (cron)
+
+Use `cron` to run Bouncer at any interval you choose. We provide a wrapper script to handle the environment and logging.
+
+#### 1. Configure the Cron Script
+
+Edit `deployment/bouncer-cron.sh` and set the `BOUNCER_DIR` variable to the absolute path of your Bouncer installation.
+
+```bash
+# In deployment/bouncer-cron.sh
+BOUNCER_DIR="/home/ubuntu/bouncer"  # <-- CHANGE THIS
+```
+
+#### 2. Set Up Your Crontab
+
+Open your crontab for editing:
+
+```bash
+crontab -e
+```
+
+Add a new line to schedule the `bouncer-cron.sh` script. See `deployment/crontab.example` for a full list of examples.
+
+**Example: Run daily at 3:00 AM**
+
+```crontab
+# Run Bouncer scan every day at 3:00 AM
+0 3 * * * /home/ubuntu/bouncer/deployment/bouncer-cron.sh
+```
+
+**Example: Run every 6 hours**
+
+```crontab
+# Run Bouncer scan every 6 hours
+0 */6 * * * /home/ubuntu/bouncer/deployment/bouncer-cron.sh
+```
+
+#### 3. Logging
+
+Logs for each cron run are saved to the `logs` directory within your Bouncer project (e.g., `/home/ubuntu/bouncer/logs/bouncer_cron_20251205_103000.log`). The script will automatically clean up logs older than 30 days.
+
+---
+
+### 🪟 Windows (Task Scheduler)
+
+Use Windows Task Scheduler with the provided PowerShell script for powerful, scheduled execution.
+
+#### 1. Configure the PowerShell Script
+
+Edit `deployment/bouncer-scheduled.ps1` and set the `$BouncerDir` variable to the absolute path of your Bouncer installation.
+
+```powershell
+# In deployment/bouncer-scheduled.ps1
+$BouncerDir = "C:\Users\YourUser\bouncer"  # <-- CHANGE THIS
+```
+
+#### 2. Create a Scheduled Task
+
+1.  Open **Task Scheduler**.
+2.  Click **Create Task** in the Actions pane.
+3.  **General Tab:**
+    *   Name: `Bouncer Scheduled Scan`
+    *   Select "Run whether user is logged on or not".
+4.  **Triggers Tab:**
+    *   Click **New**.
+    *   Choose a schedule (e.g., **Daily**, **Weekly**).
+    *   Set the desired time and recurrence.
+    *   Click **OK**.
+5.  **Actions Tab:**
+    *   Click **New**.
+    *   Action: **Start a program**.
+    *   Program/script: `powershell.exe`
+    *   Add arguments: `-ExecutionPolicy Bypass -File "C:\Users\YourUser\bouncer\deployment\bouncer-scheduled.ps1"` (use the correct path).
+    *   Start in: `C:\Users\YourUser\bouncer`
+    *   Click **OK**.
+6.  **Conditions Tab:**
+    *   Adjust power settings as needed (e.g., uncheck "Start the task only if the computer is on AC power").
+7.  **Settings Tab:**
+    *   Configure failure behavior (e.g., "If the task fails, restart every: 10 minutes").
+8.  Click **OK** to save the task. You will be prompted for your user password.
+
+#### 3. Logging
+
+Logs for each scheduled run are saved to the `logs` directory within your Bouncer project (e.g., `C:\Users\YourUser\bouncer\logs\bouncer_scheduled_20251205_103000.log`).
+
+---
+
+### 🐳 Docker (cron)
+
+For containerized environments, you can use the provided Docker setup to run Bouncer on a schedule.
+
+This setup uses a dedicated `Dockerfile.cron` to build an image with `cron` installed and configured to run Bouncer.
+
+#### 1. Configure Docker Compose
+
+Edit `deployment/docker-compose.cron.yml` to set up your environment.
+
+*   **Volumes:** Mount the directory you want to scan into the container (e.g., `- ./my-project:/watch:ro`).
+*   **Environment:** Set your notification webhooks and other Bouncer settings.
+
+```yaml
+# In deployment/docker-compose.cron.yml
+services:
+  bouncer-cron:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.cron
+    volumes:
+      # Mount the directory to watch (read-only is safer)
+      - /path/to/your/codebase:/watch:ro
+      # Persist logs
+      - ./logs:/app/logs
+    environment:
+      # Set your notification webhook
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      # Customize the cron schedule (optional, defaults to hourly)
+      # This example runs at 4:05 AM every day
+      - CRON_SCHEDULE="5 4 * * *"
+```
+
+#### 2. Build and Run
+
+Use `docker-compose` to manage the cron container.
+
+```bash
+# Build and start the container in the background
+docker-compose -f deployment/docker-compose.cron.yml up --build -d
+
+# View logs
+docker-compose -f deployment/docker-compose.cron.yml logs -f
+
+# Stop the container
+docker-compose -f deployment/docker-compose.cron.yml down
+```
+
+By default, the cron job runs every hour. You can customize this by setting the `CRON_SCHEDULE` environment variable in the `docker-compose.cron.yml` file.

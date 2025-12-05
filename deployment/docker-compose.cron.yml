@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  bouncer-cron:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.cron
+    container_name: bouncer-cron
+    volumes:
+      # Mount the directory to watch
+      - /path/to/watch:/watch:ro
+      # Mount logs directory
+      - ./logs:/app/logs
+      # Mount config file
+      - ../bouncer.yaml:/app/bouncer.yaml:ro
+    environment:
+      # Notification settings
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - EMAIL_SMTP_HOST=${EMAIL_SMTP_HOST}
+      - EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_TO=${EMAIL_TO}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      # Bouncer settings
+      - BOUNCER_NOTIFICATION_LEVEL=detailed
+      - BOUNCER_AUTO_FIX=false
+    restart: unless-stopped
+    # Optional: Set custom cron schedule via environment variable
+    # CRON_SCHEDULE: "0 */6 * * *"  # Every 6 hours

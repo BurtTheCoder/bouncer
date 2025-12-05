@@ -328,7 +328,15 @@ Run Bouncer as a background service that starts automatically.
    - Action: Run `start-bouncer.bat`
    - Settings: Restart on failure
 
-**📚 Full deployment guide:** [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+### ⏰ Scheduled Execution (Cron & Scheduled Tasks)
+
+You can also run Bouncer on a schedule for periodic audits instead of continuous monitoring. This is perfect for running nightly scans, weekly reports, or batch processing.
+
+- **Linux/macOS**: Use `cron` with the provided wrapper script.
+- **Windows**: Use Task Scheduler with the PowerShell script.
+- **Docker**: A `Dockerfile.cron` is included for scheduled runs in a container.
+
+**📚 Full deployment and scheduling guide:** [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ---
 
