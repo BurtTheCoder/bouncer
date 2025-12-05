@@ -17,20 +17,74 @@ class ConfigLoader:
     
     @staticmethod
     def load(config_path: Path) -> Dict[str, Any]:
-        """Load configuration from YAML file"""
+        """Load configuration from YAML file with environment variable overrides"""
         if not config_path.exists():
             raise FileNotFoundError(f"Config file not found: {config_path}")
         
         with open(config_path) as f:
             config = yaml.safe_load(f)
         
-        # Expand environment variables
+        # Expand environment variables in config values
         config = ConfigLoader._expand_env_vars(config)
+        
+        # Apply environment variable overrides
+        config = ConfigLoader._apply_env_overrides(config)
         
         # Validate
         ConfigLoader._validate(config)
         
         logger.info(f"📋 Configuration loaded from: {config_path}")
+        return config
+    
+    @staticmethod
+    def _apply_env_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply environment variable overrides to configuration"""
+        # Watch directory override
+        if os.getenv('BOUNCER_WATCH_DIR'):
+            config['watch_dir'] = os.getenv('BOUNCER_WATCH_DIR')
+            logger.info(f"🔧 Override: watch_dir = {config['watch_dir']}")
+        
+        # Recursive monitoring override
+        if os.getenv('BOUNCER_RECURSIVE'):
+            recursive = os.getenv('BOUNCER_RECURSIVE', 'true').lower() == 'true'
+            config['recursive'] = recursive
+            logger.info(f"🔧 Override: recursive = {recursive}")
+        
+        # Debounce delay override
+        if os.getenv('BOUNCER_DEBOUNCE_DELAY'):
+            config['debounce_delay'] = float(os.getenv('BOUNCER_DEBOUNCE_DELAY'))
+            logger.info(f"🔧 Override: debounce_delay = {config['debounce_delay']}")
+        
+        # Report-only mode override
+        if os.getenv('BOUNCER_REPORT_ONLY'):
+            report_only = os.getenv('BOUNCER_REPORT_ONLY', 'false').lower() == 'true'
+            config['report_only'] = report_only
+            logger.info(f"🔧 Override: report_only = {report_only}")
+        
+        # Global auto-fix override
+        if os.getenv('BOUNCER_AUTO_FIX'):
+            auto_fix = os.getenv('BOUNCER_AUTO_FIX', 'true').lower() == 'true'
+            config['auto_fix_override'] = auto_fix
+            logger.info(f"🔧 Override: auto_fix (global) = {auto_fix}")
+        
+        # Log level override
+        if os.getenv('BOUNCER_LOG_LEVEL'):
+            config['log_level'] = os.getenv('BOUNCER_LOG_LEVEL').upper()
+            logger.info(f"🔧 Override: log_level = {config['log_level']}")
+        
+        # Max file size override
+        if os.getenv('BOUNCER_MAX_FILE_SIZE'):
+            config['max_file_size'] = int(os.getenv('BOUNCER_MAX_FILE_SIZE'))
+            logger.info(f"🔧 Override: max_file_size = {config['max_file_size']} bytes")
+        
+        # Enabled bouncers override (comma-separated list)
+        if os.getenv('BOUNCER_ENABLED_BOUNCERS'):
+            enabled_list = [b.strip() for b in os.getenv('BOUNCER_ENABLED_BOUNCERS').split(',')]
+            if 'bouncers' in config:
+                for bouncer_name in config['bouncers']:
+                    config['bouncers'][bouncer_name]['enabled'] = bouncer_name in enabled_list
+            logger.info(f"🔧 Override: enabled_bouncers = {enabled_list}")
+        
         return config
     
     @staticmethod
