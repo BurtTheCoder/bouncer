@@ -15,7 +15,13 @@ from bouncers import (
     CodeQualityBouncer,
     SecurityBouncer,
     DocumentationBouncer,
-    DataValidationBouncer
+    DataValidationBouncer,
+    PerformanceBouncer,
+    AccessibilityBouncer,
+    LicenseBouncer,
+    InfrastructureBouncer,
+    APIContractBouncer,
+    DependencyBouncer
 )
 from notifications import SlackNotifier, FileLoggerNotifier
 
@@ -66,6 +72,42 @@ def create_orchestrator(config: dict) -> BouncerOrchestrator:
         orchestrator.register_bouncer(
             'data_validation',
             DataValidationBouncer(bouncer_config.get('data_validation', {}))
+        )
+    
+    if bouncer_config.get('performance', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'performance',
+            PerformanceBouncer(bouncer_config.get('performance', {}))
+        )
+    
+    if bouncer_config.get('accessibility', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'accessibility',
+            AccessibilityBouncer(bouncer_config.get('accessibility', {}))
+        )
+    
+    if bouncer_config.get('license', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'license',
+            LicenseBouncer(bouncer_config.get('license', {}))
+        )
+    
+    if bouncer_config.get('infrastructure', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'infrastructure',
+            InfrastructureBouncer(bouncer_config.get('infrastructure', {}))
+        )
+    
+    if bouncer_config.get('api_contract', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'api_contract',
+            APIContractBouncer(bouncer_config.get('api_contract', {}))
+        )
+    
+    if bouncer_config.get('dependency', {}).get('enabled', True):
+        orchestrator.register_bouncer(
+            'dependency',
+            DependencyBouncer(bouncer_config.get('dependency', {}))
         )
     
     # Register notifiers
