@@ -53,8 +53,31 @@ class BouncerOrchestrator:
         self.bouncers = {}
         self.notifiers = []
         self.running = False
+        self.mcp_manager = None
+        self.integration_actions = None
         
-        logger.info(f"🚪 Bouncer initialized for: {self.watch_dir}")
+        # Initialize MCP integrations if configured
+        integrations_config = config.get('integrations', {})
+        if integrations_config:
+            try:
+                from integrations import MCPManager, IntegrationActions
+                self.mcp_manager = MCPManager(integrations_config)
+                self.integration_actions = IntegrationActions(
+                    self.mcp_manager,
+                    self.watch_dir
+                )
+                logger.info("✅ MCP integrations initialized")
+                
+                # Validate credentials
+                missing = self.mcp_manager.get_missing_credentials()
+                if missing:
+                    logger.warning(f"⚠️  Missing credentials for: {', '.join(missing)}")
+            except ImportError:
+                logger.warning("⚠️  MCP integrations not available (missing dependencies)")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize MCP integrations: {e}")
+        
+        logger.info(f"🚺 Bouncer initialized for: {self.watch_dir}")
     
     def register_bouncer(self, name: str, bouncer):
         """Register a specialized bouncer"""
@@ -101,6 +124,10 @@ class BouncerOrchestrator:
         # Send notifications
         await self._notify(event, results)
         
+        # Handle MCP integrations (create PRs/issues if configured)
+        if self.integration_actions:
+            await self._handle_integrations(results)
+        
         return results
     
     async def _notify(self, event: FileChangeEvent, results: List[BouncerResult]):
@@ -110,6 +137,64 @@ class BouncerOrchestrator:
                 await notifier.notify(event, results)
             except Exception as e:
                 logger.error(f"Notification error: {e}")
+    
+    async def _handle_integrations(self, results: List[BouncerResult]):
+        """Handle MCP integrations (create PRs/issues based on results)"""
+        if not self.integration_actions or not self.mcp_manager:
+            return
+        
+        for result in results:
+            # Skip if no issues or fixes
+            if not result.issues_found and not result.fixes_applied:
+                continue
+            
+            try:
+                # Check if GitHub integration is enabled
+                if self.mcp_manager.is_integration_enabled('github'):
+                    github_config = self.mcp_manager.get_integration_config('github')
+                    
+                    # Create PR if fixes were applied and auto_create_pr is enabled
+                    if result.fixes_applied and github_config.get('auto_create_pr', False):
+                        logger.info(f"🔗 Creating GitHub PR for {result.bouncer_name} fixes...")
+                        pr_result = await self.integration_actions.create_github_pr(
+                            result,
+                            auto_create=True
+                        )
+                        if pr_result.get('success'):
+                            logger.info(f"✅ PR created: {pr_result.get('pr_url')}")
+                        else:
+                            logger.error(f"❌ PR creation failed: {pr_result.get('error')}")
+                    
+                    # Create issue if problems found and auto_create_issue is enabled
+                    if result.issues_found and github_config.get('auto_create_issue', False):
+                        logger.info(f"🔗 Creating GitHub issue for {result.bouncer_name} findings...")
+                        issue_result = await self.integration_actions.create_github_issue(
+                            result,
+                            auto_create=True
+                        )
+                        if issue_result.get('success'):
+                            logger.info(f"✅ Issue created: {issue_result.get('issue_url')}")
+                        else:
+                            logger.error(f"❌ Issue creation failed: {issue_result.get('error')}")
+                
+                # Check if Linear integration is enabled
+                if self.mcp_manager.is_integration_enabled('linear'):
+                    linear_config = self.mcp_manager.get_integration_config('linear')
+                    
+                    # Create Linear issue if auto_create_issue is enabled
+                    if result.issues_found and linear_config.get('auto_create_issue', False):
+                        logger.info(f"🔗 Creating Linear issue for {result.bouncer_name} findings...")
+                        linear_result = await self.integration_actions.create_linear_issue(
+                            result,
+                            auto_create=True
+                        )
+                        if linear_result.get('success'):
+                            logger.info(f"✅ Linear issue created: {linear_result.get('issue_url')}")
+                        else:
+                            logger.error(f"❌ Linear issue creation failed: {linear_result.get('error')}")
+                
+            except Exception as e:
+                logger.error(f"❌ Integration error for {result.bouncer_name}: {e}")
     
     async def event_processor_loop(self):
         """Main loop that processes events from queue"""

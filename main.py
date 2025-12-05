@@ -25,7 +25,14 @@ from bouncers import (
     ObsidianBouncer,
     LogInvestigator
 )
-from notifications import SlackNotifier, FileLoggerNotifier
+from notifications import (
+    SlackNotifier,
+    FileLoggerNotifier,
+    DiscordNotifier,
+    EmailNotifier,
+    TeamsNotifier,
+    WebhookNotifier
+)
 
 
 def setup_logging(verbose: bool = False):
@@ -132,6 +139,26 @@ def create_orchestrator(config: dict) -> BouncerOrchestrator:
             SlackNotifier(notifications_config.get('slack', {}))
         )
     
+    if notifications_config.get('discord', {}).get('enabled', False):
+        orchestrator.register_notifier(
+            DiscordNotifier(notifications_config.get('discord', {}))
+        )
+    
+    if notifications_config.get('email', {}).get('enabled', False):
+        orchestrator.register_notifier(
+            EmailNotifier(notifications_config.get('email', {}))
+        )
+    
+    if notifications_config.get('teams', {}).get('enabled', False):
+        orchestrator.register_notifier(
+            TeamsNotifier(notifications_config.get('teams', {}))
+        )
+    
+    if notifications_config.get('webhook', {}).get('enabled', False):
+        orchestrator.register_notifier(
+            WebhookNotifier(notifications_config.get('webhook', {}))
+        )
+    
     if notifications_config.get('file_log', {}).get('enabled', True):
         orchestrator.register_notifier(
             FileLoggerNotifier(notifications_config.get('file_log', {}))
@@ -156,7 +183,7 @@ Examples:
     
     parser.add_argument(
         'command',
-        choices=['start', 'scan', 'init', 'version'],
+        choices=['start', 'scan', 'init', 'version', 'validate-config'],
         help='Command to execute'
     )
     
@@ -192,7 +219,23 @@ Examples:
         help='Time window for git diff (e.g., "1 hour ago", "24 hours ago")'
     )
     
+    parser.add_argument(
+        '--report-only',
+        action='store_true',
+        help='Report issues without making any changes (disables auto-fix)'
+    )
+    
+    parser.add_argument(
+        '--diff-only',
+        action='store_true',
+        help='Only check files that have changed (alias for --git-diff)'
+    )
+    
     args = parser.parse_args()
+    
+    # Handle flag aliases
+    if args.diff_only:
+        args.git_diff = True
     
     # Setup logging
     setup_logging(args.verbose)
@@ -203,6 +246,65 @@ Examples:
         from bouncer import __version__
         print(f"Bouncer v{__version__}")
         return
+    
+    elif args.command == 'validate-config':
+        # Validate configuration file
+        if not args.config.exists():
+            logger.error(f"❌ Config file not found: {args.config}")
+            sys.exit(1)
+        
+        try:
+            config = ConfigLoader.load(args.config)
+            logger.info(f"✅ Config file is valid: {args.config}")
+            
+            # Validate structure
+            errors = []
+            warnings = []
+            
+            # Check required fields
+            if 'watch_dir' not in config:
+                errors.append("Missing required field: watch_dir")
+            elif not Path(config['watch_dir']).exists():
+                warnings.append(f"Watch directory does not exist: {config['watch_dir']}")
+            
+            # Check bouncers
+            if 'bouncers' not in config:
+                warnings.append("No bouncers configured")
+            else:
+                available_bouncers = [
+                    'code_quality', 'security', 'documentation', 'data_validation',
+                    'performance', 'accessibility', 'license', 'infrastructure',
+                    'api_contract', 'dependency', 'obsidian', 'log_investigator'
+                ]
+                for bouncer_name in config.get('bouncers', {}):
+                    if bouncer_name not in available_bouncers:
+                        warnings.append(f"Unknown bouncer: {bouncer_name}")
+            
+            # Check integrations
+            if 'integrations' in config:
+                available_integrations = ['github', 'gitlab', 'linear', 'jira']
+                for integration_name in config.get('integrations', {}):
+                    if integration_name not in available_integrations:
+                        warnings.append(f"Unknown integration: {integration_name}")
+            
+            # Print results
+            if errors:
+                logger.error("❌ Validation failed:")
+                for error in errors:
+                    logger.error(f"  - {error}")
+                sys.exit(1)
+            
+            if warnings:
+                logger.warning("⚠️  Validation warnings:")
+                for warning in warnings:
+                    logger.warning(f"  - {warning}")
+            
+            logger.info("✅ Configuration is valid!")
+            return
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to validate config: {e}")
+            sys.exit(1)
     
     elif args.command == 'init':
         # Create default config
@@ -244,6 +346,13 @@ Examples:
         
         # Override watch_dir with target_dir
         config['watch_dir'] = str(args.target_dir)
+        
+        # Apply --report-only flag
+        if args.report_only:
+            logger.info("📋 Report-only mode: auto-fix disabled for all bouncers")
+            for bouncer_name in config.get('bouncers', {}):
+                if isinstance(config['bouncers'][bouncer_name], dict):
+                    config['bouncers'][bouncer_name]['auto_fix'] = False
         
         # Create orchestrator
         orchestrator = create_orchestrator(config)
@@ -288,6 +397,13 @@ Examples:
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
             sys.exit(1)
+        
+        # Apply --report-only flag
+        if args.report_only:
+            logger.info("📋 Report-only mode: auto-fix disabled for all bouncers")
+            for bouncer_name in config.get('bouncers', {}):
+                if isinstance(config['bouncers'][bouncer_name], dict):
+                    config['bouncers'][bouncer_name]['auto_fix'] = False
         
         # Create orchestrator
         orchestrator = create_orchestrator(config)
