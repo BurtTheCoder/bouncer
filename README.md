@@ -62,13 +62,43 @@ Now, edit `bouncer.yaml`:
 - Enable/disable bouncers and configure their behavior.
 - Set up your Slack webhook URL for notifications.
 
+#### Authentication Setup
+
 Create a `.env` file for your secrets:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and add your `ANTHROPIC_API_KEY` and `SLACK_WEBHOOK_URL`.
+Bouncer supports **multiple authentication methods**. Choose one:
+
+**Option 1: Anthropic API Key** (Recommended)
+```
+ANTHROPIC_API_KEY=your_api_key_here
+SLACK_WEBHOOK_URL=your_webhook_url
+```
+
+**Option 2: AWS Bedrock**
+```
+USE_BEDROCK=true
+AWS_REGION=us-east-1
+SLACK_WEBHOOK_URL=your_webhook_url
+```
+
+**Option 3: Google Vertex AI**
+```
+USE_VERTEX=true
+GOOGLE_CLOUD_PROJECT=your-project
+SLACK_WEBHOOK_URL=your_webhook_url
+```
+
+**Option 4: Microsoft Foundry**
+```
+USE_FOUNDRY=true
+SLACK_WEBHOOK_URL=your_webhook_url
+```
+
+**📚 Full authentication guide:** [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)
 
 ### 3. Run Bouncer
 
