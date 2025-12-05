@@ -77,7 +77,7 @@ class BouncerOrchestrator:
             except Exception as e:
                 logger.error(f"❌ Failed to initialize MCP integrations: {e}")
         
-        logger.info(f"🚺 Bouncer initialized for: {self.watch_dir}")
+        logger.info(f"🚪 Bouncer initialized for: {self.watch_dir}")
     
     def register_bouncer(self, name: str, bouncer):
         """Register a specialized bouncer"""

@@ -30,18 +30,23 @@ class FileWatcher:
         from .core import FileChangeEvent
         
         class ChangeHandler(FileSystemEventHandler):
+            """Handles file system events from watchdog"""
+            
             def __init__(self, watcher):
                 self.watcher = watcher
             
             def on_modified(self, event):
+                """Handle file modification events"""
                 if not event.is_directory:
                     self._handle_change(event.src_path, 'modified')
             
             def on_created(self, event):
+                """Handle file creation events"""
                 if not event.is_directory:
                     self._handle_change(event.src_path, 'created')
             
             def on_deleted(self, event):
+                """Handle file deletion events"""
                 if not event.is_directory:
                     self._handle_change(event.src_path, 'deleted')
             
