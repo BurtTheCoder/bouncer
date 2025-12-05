@@ -183,7 +183,7 @@ Examples:
     
     parser.add_argument(
         'command',
-        choices=['start', 'scan', 'init', 'version', 'validate-config'],
+        choices=['start', 'scan', 'init', 'version', 'validate-config', 'wizard'],
         help='Command to execute'
     )
     
@@ -304,6 +304,22 @@ Examples:
             
         except Exception as e:
             logger.error(f"❌ Failed to validate config: {e}")
+            sys.exit(1)
+    
+    elif args.command == 'wizard':
+        # Launch interactive setup wizard
+        try:
+            from bouncer.wizard import BouncerWizard
+            wizard = BouncerWizard(config_path=args.config)
+            # Textual handles its own event loop
+            import sys
+            sys.exit(wizard.run())
+        except ImportError:
+            logger.error("❌ Textual library not installed")
+            logger.info("Install with: pip install textual")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"❌ Wizard failed: {e}", exc_info=True)
             sys.exit(1)
     
     elif args.command == 'init':

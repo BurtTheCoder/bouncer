@@ -1,0 +1,128 @@
+/* Bouncer Wizard Styles */
+
+Screen {
+    background: $surface;
+}
+
+/* Welcome Screen */
+#welcome-container {
+    align: center middle;
+    width: 100%;
+    height: 100%;
+}
+
+#logo {
+    width: auto;
+    height: auto;
+    content-align: center middle;
+    color: $accent;
+}
+
+#welcome-text {
+    width: 80;
+    height: auto;
+    content-align: center middle;
+    margin: 2;
+}
+
+/* Buttons */
+Button {
+    margin: 1 2;
+    min-width: 20;
+}
+
+Button.primary {
+    background: $accent;
+    color: $text;
+}
+
+Button.secondary {
+    background: $panel;
+}
+
+/* Input widgets */
+Input {
+    margin: 1 0;
+}
+
+DirectoryTree {
+    height: 20;
+    border: solid $accent;
+    margin: 1 0;
+}
+
+/* Checkbox lists */
+.bouncer-list {
+    height: 30;
+    border: solid $accent;
+    margin: 1 0;
+}
+
+/* Progress indicator */
+#progress {
+    dock: top;
+    height: 3;
+    margin: 1 2;
+}
+
+/* Container styling */
+.content-container {
+    width: 100%;
+    height: 100%;
+    padding: 2 4;
+}
+
+.form-container {
+    width: 80;
+    height: auto;
+    align: center top;
+    margin: 2 0;
+}
+
+/* Labels */
+Label {
+    margin: 1 0;
+}
+
+.section-title {
+    text-style: bold;
+    color: $accent;
+    margin: 2 0 1 0;
+}
+
+.help-text {
+    color: $text-muted;
+    margin: 0 0 2 0;
+}
+
+/* Review screen */
+.config-preview {
+    height: 30;
+    border: solid $accent;
+    margin: 1 0;
+}
+
+/* Success screen */
+.success-message {
+    width: 60;
+    height: auto;
+    align: center middle;
+    color: $success;
+    text-style: bold;
+}
+
+.command-box {
+    width: 60;
+    height: auto;
+    align: center middle;
+    border: solid $accent;
+    padding: 1 2;
+    margin: 2 0;
+}
+
+/* Navigation buttons container */
+.nav-buttons {
+    dock: bottom;
+    height: 5;
+    align: center middle;
+}

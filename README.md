@@ -26,7 +26,31 @@ Think of it as a bouncer at a club - only quality gets past the door.
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### ✨ Easy Setup with Wizard (Recommended)
+
+The fastest way to get started is with our **interactive setup wizard**:
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Launch the wizard
+python main.py wizard
+```
+
+The wizard will guide you through:
+- 📁 Selecting your project directory
+- 🎯 Choosing which bouncers to enable
+- 🔔 Configuring notifications (Slack, Discord, Email, etc.)
+- 🔗 Setting up integrations (GitHub, GitLab, Linear, Jira)
+
+**[Full Wizard Guide](docs/WIZARD.md)** - Complete wizard documentation
+
+---
+
+### Manual Setup
+
+#### Prerequisites
 
 - Python 3.10+
 - `pip` and `venv`
@@ -490,6 +514,7 @@ Bouncer integrates with external services using the **Model Context Protocol (MC
 
 ## 📚 Documentation
 
+- **[🧙‍♂️ Setup Wizard](docs/WIZARD.md)** - Interactive TUI for easy configuration
 - **[MCP Integrations](docs/MCP_INTEGRATIONS.md)** - GitHub, GitLab, Linear, Jira integration guide
 - **[Log Investigator](docs/LOG_INVESTIGATOR.md)** - Monitor logs and investigate errors
 - **[Notification Channels](docs/NOTIFICATIONS.md)** - Slack, Discord, Email, Teams, and more
