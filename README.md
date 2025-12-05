@@ -82,6 +82,115 @@ Bouncer will now watch the specified directory for file changes and start checki
 
 ---
 
+## 🎯 Real-World Use Cases
+
+Bouncer is a versatile quality control system that can be adapted to many different workflows. Here are some real-world examples:
+
+### 1. **Solo Developer: The Personal Code Guardian** 👨‍💻
+
+Maintain high code quality on your side projects without manual reviews.
+
+**Setup:** Run Bouncer locally while you code. Enable Code, Security, Docs, and Dependency bouncers with `auto_fix: true`.
+
+**Result:** Your codebase stays clean and secure automatically. Focus on building features while Bouncer handles quality control.
+
+---
+
+### 2. **Startup Team: The Automated PR Reviewer** 🚀
+
+Automate tedious code review tasks so your team can focus on architecture and business logic.
+
+**Setup:** Integrate Bouncer into your CI/CD pipeline (GitHub Actions, GitLab CI). Run on every pull request.
+
+**Result:** Bouncer posts detailed PR comments with findings. Catches issues before human review, saving hours per PR. Enforces consistent standards across the team.
+
+**Example PR Comment:**
+```
+🚪 Bouncer Report
+
+✅ 12 checks passed
+⚠️ 3 issues found
+
+• Performance: large_image.png is 1.2MB (limit: 500KB)
+• Accessibility: Missing alt text on user_avatar.jsx
+• Security: Hardcoded API key found in config.py
+```
+
+---
+
+### 3. **Knowledge Worker: The Obsidian Gardener** 🧠
+
+Keep your Obsidian vault organized, connected, and valuable over time.
+
+**Setup:** Point Bouncer at your Obsidian vault. Enable the Obsidian bouncer with frontmatter requirements and tag formatting.
+
+**Result:** Automatically fixes broken wikilinks, standardizes tags, adds missing metadata, and suggests connections. Your knowledge base stays healthy without manual maintenance.
+
+**Example Notification:**
+```
+🧠 Obsidian Bouncer Report
+
+Note: New Machine Learning Idea.md
+
+Fixes Applied:
+• Added created: 2024-12-05
+• Standardized tag #ML to #machine-learning
+
+Suggestions:
+• Link to [[Machine Learning MOC]]
+• This note is a stub (35 words). Consider expanding.
+```
+
+---
+
+### 4. **DevOps Team: The Infrastructure Guardian** 🏗️
+
+Prevent misconfigurations and enforce security best practices in infrastructure-as-code.
+
+**Setup:** Watch your IaC repository. Enable Infrastructure and Security bouncers with `auto_fix: false` (require human review).
+
+**Result:** Catches dangerous configurations before they reach production. Creates tickets for issues. Your infrastructure is more secure and reliable.
+
+**Example Alert:**
+```
+🚨 Critical Issue in production.tf
+
+Type: Insecure Security Group
+Severity: Critical
+
+Details: aws_security_group_rule allows ingress from 
+0.0.0.0/0 on port 22 (SSH).
+
+Please review and remediate immediately.
+```
+
+---
+
+### 5. **Open Source Project: The Community Maintainer** 🌍
+
+Ensure contributions meet quality standards without spending all your time on nitpicks.
+
+**Setup:** Run Bouncer on all PRs from external contributors.
+
+**Result:** Contributors get fast, helpful feedback. You spend less time on tedious reviews and more time on meaningful contributions. Your project maintains high quality standards.
+
+**Example PR Comment:**
+```
+👋 Hello! Thanks for your contribution!
+
+I'm Bouncer, the automated quality assistant. I've found 
+a few things that need attention:
+
+• Code Style: Run `npm run format` to fix formatting
+• Documentation: README.md needs updating
+• License Header: new_feature.js is missing MIT header
+
+Once these are addressed, the maintainers will review. 
+Thanks again! 🚀
+```
+
+---
+
 ## 🐳 Docker Deployment
 
 For a more isolated and production-ready setup, use Docker.
