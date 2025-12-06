@@ -81,7 +81,7 @@ class CustomBouncer:
                 cwd=str(file_path.parent),
                 allowed_tools=["Read", "Write"] if self.auto_fix else ["Read"],
                 permission_mode="acceptEdits" if self.auto_fix else "plan",
-                structured_output=BOUNCER_OUTPUT_SCHEMA
+                output_format=BOUNCER_OUTPUT_SCHEMA
             )
             
             # Query Claude

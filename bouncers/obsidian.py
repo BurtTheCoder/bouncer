@@ -49,7 +49,7 @@ class ObsidianBouncer(BaseBouncer):
             allowed_tools=["Read", "Write", "Bash"],
             permission_mode="acceptEdits" if self.auto_fix else "plan",
             system_prompt=self._get_system_prompt(),
-            structured_output=get_bouncer_schema("obsidian")
+            output_format=get_bouncer_schema("obsidian")
         )
         
         try:

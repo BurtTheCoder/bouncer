@@ -38,7 +38,10 @@ from notifications import (
 def setup_logging(verbose: bool = False):
     """Setup logging configuration"""
     level = logging.DEBUG if verbose else logging.INFO
-    
+
+    # Create log directory first (before FileHandler tries to open the file)
+    Path('.bouncer').mkdir(exist_ok=True)
+
     logging.basicConfig(
         level=level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -47,9 +50,6 @@ def setup_logging(verbose: bool = False):
             logging.FileHandler('.bouncer/bouncer.log')
         ]
     )
-    
-    # Create log directory
-    Path('.bouncer').mkdir(exist_ok=True)
 
 
 def create_orchestrator(config: dict) -> BouncerOrchestrator:

@@ -38,7 +38,7 @@ class CodeQualityBouncer(BaseBouncer):
             allowed_tools=["Read", "Write", "Bash"],
             permission_mode="acceptEdits" if self.auto_fix else "plan",
             system_prompt=self._get_system_prompt(),
-            structured_output=self._get_output_schema()
+            output_format=self._get_output_schema()
         )
         
         try:

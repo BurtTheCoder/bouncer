@@ -188,8 +188,7 @@ notifications:
     enabled: false
     webhook_url: ${SLACK_WEBHOOK_URL}
     channel: "#bouncer"
-    min_severity: warning
-    detail_level: summary  # info, warning, denied, error
+    min_severity: warning  # info, warning, denied, error
     detail_level: summary  # summary, detailed, full_transcript
   
   # Discord notifications

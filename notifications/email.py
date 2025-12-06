@@ -42,30 +42,42 @@ class EmailNotifier:
         """Send notification via email"""
         if not self.enabled:
             return
-        
+
         # Check severity threshold
         severity = result.get('severity', 'info')
         if not self._should_notify(severity):
             return
-        
+
+        server = None
         try:
             msg = self._create_email(result)
-            
-            # Connect to SMTP server
+
+            # Connect to SMTP server using context manager pattern
             if self.use_tls:
-                server = smtplib.SMTP(self.smtp_host, self.smtp_port)
+                server = smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=30)
                 server.starttls()
             else:
-                server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port)
-            
+                server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, timeout=30)
+
             server.login(self.smtp_user, self.smtp_password)
             server.send_message(msg)
-            server.quit()
-            
+
             logger.debug(f"📧 Email notification sent for {result.get('file_path')}")
-        
+
+        except smtplib.SMTPException as e:
+            logger.error(f"SMTP error sending email notification: {e}")
         except Exception as e:
             logger.error(f"Failed to send email notification: {e}")
+        finally:
+            # Ensure connection is always closed
+            if server is not None:
+                try:
+                    server.quit()
+                except Exception:
+                    try:
+                        server.close()
+                    except Exception:
+                        pass
     
     def _create_email(self, result: Dict[str, Any]) -> MIMEMultipart:
         """Create email from result"""

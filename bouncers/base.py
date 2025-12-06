@@ -66,15 +66,15 @@ class BaseBouncer(ABC):
         fixes_applied: List[Dict[str, Any]] = None,
         messages: List[str] = None
     ):
-        """Helper to create BouncerResult"""
+        """Helper to create BouncerResult (immutable with tuples)"""
         from bouncer.core import BouncerResult
-        
+
         return BouncerResult(
             bouncer_name=self.name,
             file_path=event.path,
             status=status,
-            issues_found=issues_found or [],
-            fixes_applied=fixes_applied or [],
-            messages=messages or [],
+            issues_found=tuple(issues_found or []),
+            fixes_applied=tuple(fixes_applied or []),
+            messages=tuple(messages or []),
             timestamp=time.time()
         )

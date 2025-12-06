@@ -9,8 +9,14 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import time
 import logging
+from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
+
+# Constants
+DEFAULT_MAX_PENDING_CHANGES = 10000
+DEFAULT_DEBOUNCE_DELAY = 2.0
+DEFAULT_POLL_INTERVAL = 0.5
 
 
 class FileWatcher:
@@ -18,12 +24,16 @@ class FileWatcher:
     Watches directory for file changes
     Debounces rapid changes and queues events for processing
     """
-    
+
     def __init__(self, watch_dir: Path, orchestrator):
         self.watch_dir = watch_dir
         self.orchestrator = orchestrator
-        self.pending_changes = {}  # path -> timestamp
-        self.debounce_delay = 2.0  # seconds
+        # Use OrderedDict to maintain insertion order for LRU eviction
+        self.pending_changes: OrderedDict = OrderedDict()
+        self.debounce_delay = orchestrator.config.get('debounce_delay', DEFAULT_DEBOUNCE_DELAY)
+        self.poll_interval = orchestrator.config.get('poll_interval', DEFAULT_POLL_INTERVAL)
+        # Max pending changes to prevent unbounded memory growth
+        self.max_pending_changes = orchestrator.config.get('max_pending_changes', DEFAULT_MAX_PENDING_CHANGES)
     
     async def start(self):
         """Start watching the directory"""
@@ -52,12 +62,24 @@ class FileWatcher:
             
             def _handle_change(self, path_str: str, event_type: str):
                 path = Path(path_str)
-                
+
                 # Ignore certain files
                 if self.watcher.orchestrator.should_ignore(path):
                     return
-                
-                # Update pending changes
+
+                # Check if we've exceeded max pending changes
+                if len(self.watcher.pending_changes) >= self.watcher.max_pending_changes:
+                    # Evict oldest entries (first 10% of max)
+                    evict_count = self.watcher.max_pending_changes // 10
+                    for _ in range(evict_count):
+                        if self.watcher.pending_changes:
+                            oldest_key = next(iter(self.watcher.pending_changes))
+                            del self.watcher.pending_changes[oldest_key]
+                            logger.warning(f"Evicted pending change due to overflow: {oldest_key}")
+
+                # Update pending changes (move to end if already exists)
+                if path in self.watcher.pending_changes:
+                    self.watcher.pending_changes.move_to_end(path)
                 self.watcher.pending_changes[path] = {
                     'timestamp': time.time(),
                     'event_type': event_type
@@ -78,17 +100,17 @@ class FileWatcher:
         # Debounce loop
         try:
             while self.orchestrator.running:
-                await asyncio.sleep(0.5)
-                
+                await asyncio.sleep(self.poll_interval)
+
                 current_time = time.time()
                 to_process = []
-                
+
                 # Find changes that have settled
                 for path, info in list(self.pending_changes.items()):
                     if current_time - info['timestamp'] >= self.debounce_delay:
                         to_process.append((path, info))
                         del self.pending_changes[path]
-                
+
                 # Queue settled changes
                 for path, info in to_process:
                     event = FileChangeEvent(
@@ -96,8 +118,12 @@ class FileWatcher:
                         event_type=info['event_type'],
                         timestamp=info['timestamp']
                     )
-                    await self.orchestrator.event_queue.put(event)
-                    logger.debug(f"📬 Queued: {path.name}")
+                    try:
+                        # Use put_nowait with fallback to avoid blocking indefinitely
+                        self.orchestrator.event_queue.put_nowait(event)
+                        logger.debug(f"📬 Queued: {path.name}")
+                    except asyncio.QueueFull:
+                        logger.warning(f"Event queue full, dropping event for: {path.name}")
         
         finally:
             observer.stop()
