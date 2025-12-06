@@ -507,5 +507,38 @@ Examples:
             sys.exit(1)
 
 
+def run_sync_commands():
+    """Handle commands that don't need async (wizard, init, version, etc.)"""
+    import argparse
+
+    # Quick parse just to check the command
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('command', nargs='?')
+    parser.add_argument('--config', type=Path, default=Path('bouncer.yaml'))
+    parser.add_argument('--verbose', '-v', action='store_true')
+    args, _ = parser.parse_known_args()
+
+    if args.command == 'wizard':
+        setup_logging(args.verbose)
+        logger = logging.getLogger(__name__)
+        try:
+            from bouncer.wizard import BouncerWizard
+            wizard = BouncerWizard(config_path=args.config)
+            sys.exit(wizard.run())
+        except ImportError:
+            logger.error("❌ Textual library not installed")
+            logger.info("Install with: pip install textual")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"❌ Wizard failed: {e}", exc_info=True)
+            sys.exit(1)
+
+    # Not a sync command, continue to async main
+    return False
+
+
 if __name__ == '__main__':
+    # Handle sync commands first (wizard uses its own event loop)
+    run_sync_commands()
+    # Then run async main for everything else
     asyncio.run(main())
