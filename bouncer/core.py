@@ -194,10 +194,38 @@ class BouncerOrchestrator:
                         else:
                             logger.error(f"❌ Issue creation failed: {issue_result.get('error')}")
                 
+                # Check if GitLab integration is enabled
+                if self.mcp_manager.is_integration_enabled('gitlab'):
+                    gitlab_config = self.mcp_manager.get_integration_config('gitlab')
+
+                    # Create MR if fixes were applied and auto_create_mr is enabled
+                    if result.fixes_applied and gitlab_config.get('auto_create_mr', False):
+                        logger.info(f"🔗 Creating GitLab MR for {result.bouncer_name} fixes...")
+                        mr_result = await self.integration_actions.create_gitlab_mr(
+                            result,
+                            auto_create=True
+                        )
+                        if mr_result.get('success'):
+                            logger.info(f"✅ MR created: {mr_result.get('url')}")
+                        else:
+                            logger.error(f"❌ MR creation failed: {mr_result.get('error')}")
+
+                    # Create issue if problems found and auto_create_issue is enabled
+                    if result.issues_found and gitlab_config.get('auto_create_issue', False):
+                        logger.info(f"🔗 Creating GitLab issue for {result.bouncer_name} findings...")
+                        issue_result = await self.integration_actions.create_gitlab_issue(
+                            result,
+                            auto_create=True
+                        )
+                        if issue_result.get('success'):
+                            logger.info(f"✅ GitLab issue created: {issue_result.get('url')}")
+                        else:
+                            logger.error(f"❌ GitLab issue creation failed: {issue_result.get('error')}")
+
                 # Check if Linear integration is enabled
                 if self.mcp_manager.is_integration_enabled('linear'):
                     linear_config = self.mcp_manager.get_integration_config('linear')
-                    
+
                     # Create Linear issue if auto_create_issue is enabled
                     if result.issues_found and linear_config.get('auto_create_issue', False):
                         logger.info(f"🔗 Creating Linear issue for {result.bouncer_name} findings...")
@@ -206,10 +234,26 @@ class BouncerOrchestrator:
                             auto_create=True
                         )
                         if linear_result.get('success'):
-                            logger.info(f"✅ Linear issue created: {linear_result.get('issue_url')}")
+                            logger.info(f"✅ Linear issue created: {linear_result.get('url')}")
                         else:
                             logger.error(f"❌ Linear issue creation failed: {linear_result.get('error')}")
-                
+
+                # Check if Jira integration is enabled
+                if self.mcp_manager.is_integration_enabled('jira'):
+                    jira_config = self.mcp_manager.get_integration_config('jira')
+
+                    # Create Jira ticket if auto_create_ticket is enabled
+                    if result.issues_found and jira_config.get('auto_create_ticket', False):
+                        logger.info(f"🔗 Creating Jira ticket for {result.bouncer_name} findings...")
+                        jira_result = await self.integration_actions.create_jira_ticket(
+                            result,
+                            auto_create=True
+                        )
+                        if jira_result.get('success'):
+                            logger.info(f"✅ Jira ticket created: {jira_result.get('url')}")
+                        else:
+                            logger.error(f"❌ Jira ticket creation failed: {jira_result.get('error')}")
+
             except Exception as e:
                 logger.error(f"❌ Integration error for {result.bouncer_name}: {e}")
     
