@@ -29,17 +29,26 @@ class CodeQualityBouncer(BaseBouncer):
     async def check(self, event):
         """Check code quality using Claude Agent SDK"""
         from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
-        
+
         logger.info(f"👔 Code Bouncer checking: {event.path.name}")
-        
+
+        # Build options dict
+        options_kwargs = {
+            'cwd': str(event.path.parent),
+            'allowed_tools': ["Read", "Write", "Bash"],
+            'permission_mode': "acceptEdits" if self.auto_fix else "plan",
+            'system_prompt': self._get_system_prompt(),
+            'output_format': self._get_output_schema()
+        }
+
+        # Add hooks if configured
+        hooks_config = self.get_hooks_config()
+        if hooks_config:
+            options_kwargs['hooks'] = hooks_config
+            logger.debug("🪝 Hooks enabled for this check")
+
         # Configure Claude SDK with subagent
-        options = ClaudeAgentOptions(
-            cwd=str(event.path.parent),
-            allowed_tools=["Read", "Write", "Bash"],
-            permission_mode="acceptEdits" if self.auto_fix else "plan",
-            system_prompt=self._get_system_prompt(),
-            output_format=self._get_output_schema()
-        )
+        options = ClaudeAgentOptions(**options_kwargs)
         
         try:
             async with ClaudeSDKClient(options=options) as client:

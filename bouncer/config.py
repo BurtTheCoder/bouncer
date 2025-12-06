@@ -84,7 +84,104 @@ class ConfigLoader:
                 for bouncer_name in config['bouncers']:
                     config['bouncers'][bouncer_name]['enabled'] = bouncer_name in enabled_list
             logger.info(f"🔧 Override: enabled_bouncers = {enabled_list}")
-        
+
+        # Hooks enabled override
+        if os.getenv('BOUNCER_HOOKS_ENABLED'):
+            hooks_enabled = os.getenv('BOUNCER_HOOKS_ENABLED', 'false').lower() == 'true'
+            if 'hooks' not in config:
+                config['hooks'] = ConfigLoader.get_default_hooks_config()
+            config['hooks']['enabled'] = hooks_enabled
+            logger.info(f"🔧 Override: hooks.enabled = {hooks_enabled}")
+
+        # Hooks validation enabled override
+        if os.getenv('BOUNCER_HOOKS_VALIDATION_ENABLED'):
+            validation_enabled = os.getenv('BOUNCER_HOOKS_VALIDATION_ENABLED', 'true').lower() == 'true'
+            if 'hooks' not in config:
+                config['hooks'] = ConfigLoader.get_default_hooks_config()
+            if 'validation' not in config['hooks']:
+                config['hooks']['validation'] = {}
+            config['hooks']['validation']['enabled'] = validation_enabled
+            logger.info(f"🔧 Override: hooks.validation.enabled = {validation_enabled}")
+
+        # Hooks logging enabled override
+        if os.getenv('BOUNCER_HOOKS_LOGGING_ENABLED'):
+            logging_enabled = os.getenv('BOUNCER_HOOKS_LOGGING_ENABLED', 'true').lower() == 'true'
+            if 'hooks' not in config:
+                config['hooks'] = ConfigLoader.get_default_hooks_config()
+            if 'logging' not in config['hooks']:
+                config['hooks']['logging'] = {}
+            config['hooks']['logging']['enabled'] = logging_enabled
+            logger.info(f"🔧 Override: hooks.logging.enabled = {logging_enabled}")
+
+        # Notification overrides
+        config = ConfigLoader._apply_notification_overrides(config)
+
+        return config
+
+    @staticmethod
+    def _apply_notification_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply notification-specific environment variable overrides"""
+        if 'notifications' not in config:
+            config['notifications'] = {}
+
+        # Notifier configurations: (env_prefix, config_key, extra_fields)
+        notifiers = [
+            ('SLACK', 'slack', ['webhook_url', 'channel']),
+            ('DISCORD', 'discord', ['webhook_url', 'username']),
+            ('EMAIL', 'email', ['smtp_host', 'smtp_port', 'smtp_user', 'from_email']),
+            ('TEAMS', 'teams', ['webhook_url']),
+            ('WEBHOOK', 'webhook', ['webhook_url', 'method']),
+            ('FILE_LOG', 'file_log', ['log_dir', 'rotation']),
+        ]
+
+        for env_prefix, config_key, extra_fields in notifiers:
+            # Initialize notifier config if needed
+            if config_key not in config['notifications']:
+                config['notifications'][config_key] = {}
+
+            notifier_config = config['notifications'][config_key]
+
+            # Enabled override
+            env_enabled = os.getenv(f'BOUNCER_{env_prefix}_ENABLED')
+            if env_enabled:
+                enabled = env_enabled.lower() == 'true'
+                notifier_config['enabled'] = enabled
+                logger.info(f"🔧 Override: notifications.{config_key}.enabled = {enabled}")
+
+            # Detail level override
+            env_detail = os.getenv(f'BOUNCER_{env_prefix}_DETAIL_LEVEL')
+            if env_detail:
+                if env_detail.lower() in ['summary', 'detailed', 'full_transcript']:
+                    notifier_config['detail_level'] = env_detail.lower()
+                    logger.info(f"🔧 Override: notifications.{config_key}.detail_level = {env_detail.lower()}")
+
+            # Min severity override
+            env_severity = os.getenv(f'BOUNCER_{env_prefix}_MIN_SEVERITY')
+            if env_severity:
+                if env_severity.lower() in ['info', 'warning', 'denied', 'error']:
+                    notifier_config['min_severity'] = env_severity.lower()
+                    logger.info(f"🔧 Override: notifications.{config_key}.min_severity = {env_severity.lower()}")
+
+            # Extra field overrides specific to each notifier
+            for field in extra_fields:
+                env_var = f'BOUNCER_{env_prefix}_{field.upper()}'
+                env_value = os.getenv(env_var)
+                if env_value:
+                    # Handle numeric fields
+                    if field in ['smtp_port']:
+                        notifier_config[field] = int(env_value)
+                    else:
+                        notifier_config[field] = env_value
+                    logger.info(f"🔧 Override: notifications.{config_key}.{field} = {env_value}")
+
+        # Special handling for email to_emails (comma-separated list)
+        env_to_emails = os.getenv('BOUNCER_EMAIL_TO_EMAILS')
+        if env_to_emails:
+            config['notifications']['email']['to_emails'] = [
+                e.strip() for e in env_to_emails.split(',')
+            ]
+            logger.info(f"🔧 Override: notifications.email.to_emails = {env_to_emails}")
+
         return config
     
     @staticmethod
@@ -166,5 +263,48 @@ class ConfigLoader:
                     'log_dir': '.bouncer/logs',
                     'rotation': 'daily'
                 }
+            },
+            'hooks': ConfigLoader.get_default_hooks_config()
+        }
+
+    @staticmethod
+    def get_default_hooks_config() -> Dict[str, Any]:
+        """Get default hooks configuration"""
+        return {
+            'enabled': False,  # Disabled by default
+            'validation': {
+                'enabled': True,
+                'block_protected_files': True,
+                'protected_file_patterns': [
+                    '.env', 'secrets', 'credentials', 'private_key', 'id_rsa'
+                ],
+                'block_hardcoded_secrets': True,
+                'secret_patterns': [
+                    'api_key', 'api-key', 'apikey', 'password',
+                    'secret_key', 'access_token', 'auth_token'
+                ],
+                'block_dangerous_code': True,
+                'blocked_code_patterns': ['eval(', 'exec('],
+                'warning_code_patterns': [
+                    'os.system(', 'subprocess.call(', 'subprocess.Popen(',
+                    '__import__', 'rm -rf', 'pickle.loads(',
+                    'yaml.load(', 'marshal.loads('
+                ],
+                'file_size_limit': 1_000_000,
+                'block_dangerous_commands': True,
+                'dangerous_commands': [
+                    'rm -rf', 'dd if=', 'mkfs', ':(){ :|:& };:',
+                    '> /dev/sda', 'chmod -R 777', 'chown -R'
+                ],
+                'warning_commands': [
+                    'sudo', 'apt-get', 'yum', 'systemctl', 'service'
+                ]
+            },
+            'logging': {
+                'enabled': True,
+                'audit_dir': '.bouncer/audit',
+                'log_writes': True,
+                'log_bash': True,
+                'log_all_tools': False
             }
         }

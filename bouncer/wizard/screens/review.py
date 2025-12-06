@@ -17,7 +17,7 @@ class ReviewScreen(Screen):
         with Container(classes="content-container"):
             with Vertical():
                 yield Static(
-                    "[bold cyan]Step 5 of 6:[/bold cyan] Review Configuration",
+                    "[bold cyan]Step 6 of 7:[/bold cyan] Review Configuration",
                     classes="section-title"
                 )
                 yield Static(

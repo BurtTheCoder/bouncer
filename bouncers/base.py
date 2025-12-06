@@ -5,7 +5,7 @@ All specialized bouncers inherit from this
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import time
 import logging
 
@@ -15,16 +15,45 @@ logger = logging.getLogger(__name__)
 class BaseBouncer(ABC):
     """
     Base class for all bouncers
-    
+
     Each bouncer is a specialized agent that checks specific file types
     """
-    
+
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.enabled = config.get('enabled', True)
         self.file_types = config.get('file_types', [])
         self.auto_fix = config.get('auto_fix', False)
         self.name = self.__class__.__name__.replace('Bouncer', '')
+        self.hooks_manager = None  # Set by orchestrator after registration
+
+    def set_hooks_manager(self, hooks_manager) -> None:
+        """Set the hooks manager for this bouncer"""
+        self.hooks_manager = hooks_manager
+        logger.debug(f"🪝 Hooks manager set for {self.name}")
+
+    def get_hooks_config(self) -> Optional[Dict]:
+        """
+        Get hooks configuration for ClaudeAgentOptions.
+
+        Returns dict with pre_tool_use and post_tool_use hooks if available.
+        """
+        if not self.hooks_manager or not self.hooks_manager.is_enabled():
+            return None
+
+        pre_hooks = self.hooks_manager.get_pre_tool_hooks()
+        post_hooks = self.hooks_manager.get_post_tool_hooks()
+
+        if not pre_hooks and not post_hooks:
+            return None
+
+        hooks_config = {}
+        if pre_hooks:
+            hooks_config['pre_tool_use'] = pre_hooks
+        if post_hooks:
+            hooks_config['post_tool_use'] = post_hooks
+
+        return hooks_config
     
     async def should_check(self, event) -> bool:
         """

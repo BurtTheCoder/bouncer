@@ -17,7 +17,7 @@ class DirectoryScreen(Screen):
         with Container(classes="content-container"):
             with Vertical():
                 yield Static(
-                    "[bold cyan]Step 1 of 6:[/bold cyan] Select Directory to Watch",
+                    "[bold cyan]Step 1 of 7:[/bold cyan] Select Directory to Watch",
                     classes="section-title"
                 )
                 yield Static(

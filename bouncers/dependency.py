@@ -33,13 +33,21 @@ class DependencyBouncer(BaseBouncer):
         
         logger.info(f"📦 Dependency Bouncer checking: {event.path.name}")
         
-        options = ClaudeAgentOptions(
-            cwd=str(event.path.parent),
-            output_format=BOUNCER_OUTPUT_SCHEMA,
-            allowed_tools=["Read", "Write", "Bash"],
-            permission_mode="plan",  # Never auto-update dependencies without approval
-            system_prompt=self._get_system_prompt()
-        )
+        # Build options dict
+        options_kwargs = {
+            'cwd': str(event.path.parent),
+            'output_format': BOUNCER_OUTPUT_SCHEMA,
+            'allowed_tools': ["Read", "Write", "Bash"],
+            'permission_mode': "plan",  # Never auto-update dependencies without approval
+            'system_prompt': self._get_system_prompt()
+        }
+
+        # Add hooks if configured
+        hooks_config = self.get_hooks_config()
+        if hooks_config:
+            options_kwargs['hooks'] = hooks_config
+
+        options = ClaudeAgentOptions(**options_kwargs)
         
         try:
             async with ClaudeSDKClient(options=options) as client:

@@ -44,7 +44,7 @@ class IntegrationsScreen(Screen):
         with Container(classes="content-container"):
             with Vertical():
                 yield Static(
-                    "[bold cyan]Step 4 of 6:[/bold cyan] Configure Integrations",
+                    "[bold cyan]Step 4 of 7:[/bold cyan] Configure Integrations",
                     classes="section-title"
                 )
                 yield Static(
@@ -93,9 +93,9 @@ class IntegrationsScreen(Screen):
             self.app.pop_screen()
         
         elif event.button.id == "skip":
-            # Skip integrations, move to review
-            from .review import ReviewScreen
-            self.app.push_screen(ReviewScreen())
+            # Skip integrations, move to hooks
+            from .hooks import HooksScreen
+            self.app.push_screen(HooksScreen())
         
         elif event.button.id == "continue":
             # Save integration selections to config
@@ -133,5 +133,5 @@ class IntegrationsScreen(Screen):
                         })
             
             # Move to next screen
-            from .review import ReviewScreen
-            self.app.push_screen(ReviewScreen())
+            from .hooks import HooksScreen
+            self.app.push_screen(HooksScreen())

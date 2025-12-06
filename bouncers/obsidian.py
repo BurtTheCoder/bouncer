@@ -44,13 +44,21 @@ class ObsidianBouncer(BaseBouncer):
         
         logger.info(f"🧠 Obsidian Bouncer checking: {event.path.name}")
         
-        options = ClaudeAgentOptions(
-            cwd=str(event.path.parent),
-            allowed_tools=["Read", "Write", "Bash"],
-            permission_mode="acceptEdits" if self.auto_fix else "plan",
-            system_prompt=self._get_system_prompt(),
-            output_format=get_bouncer_schema("obsidian")
-        )
+        # Build options dict
+        options_kwargs = {
+            'cwd': str(event.path.parent),
+            'allowed_tools': ["Read", "Write", "Bash"],
+            'permission_mode': "acceptEdits" if self.auto_fix else "plan",
+            'system_prompt': self._get_system_prompt(),
+            'output_format': get_bouncer_schema("obsidian")
+        }
+
+        # Add hooks if configured
+        hooks_config = self.get_hooks_config()
+        if hooks_config:
+            options_kwargs['hooks'] = hooks_config
+
+        options = ClaudeAgentOptions(**options_kwargs)
         
         try:
             async with ClaudeSDKClient(options=options) as client:

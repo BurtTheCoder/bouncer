@@ -14,6 +14,7 @@ from .screens.directory import DirectoryScreen
 from .screens.bouncers import BouncersScreen
 from .screens.notifications import NotificationsScreen
 from .screens.integrations import IntegrationsScreen
+from .screens.hooks import HooksScreen
 from .screens.review import ReviewScreen
 from .screens.success import SuccessScreen
 

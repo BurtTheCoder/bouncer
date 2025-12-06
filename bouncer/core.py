@@ -72,7 +72,20 @@ class BouncerOrchestrator:
         self.running = False
         self.mcp_manager = None
         self.integration_actions = None
-        
+        self.hooks_manager = None
+
+        # Initialize hooks if configured
+        hooks_config = config.get('hooks', {})
+        if hooks_config.get('enabled', False):
+            try:
+                from hooks import HooksManager
+                self.hooks_manager = HooksManager(hooks_config)
+                logger.info("✅ Hooks initialized")
+            except ImportError:
+                logger.warning("⚠️  Hooks not available (missing dependencies)")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize hooks: {e}")
+
         # Initialize MCP integrations if configured
         integrations_config = config.get('integrations', {})
         if integrations_config:
@@ -98,6 +111,9 @@ class BouncerOrchestrator:
     
     def register_bouncer(self, name: str, bouncer):
         """Register a specialized bouncer"""
+        # Pass hooks manager to bouncer if available
+        if self.hooks_manager and hasattr(bouncer, 'set_hooks_manager'):
+            bouncer.set_hooks_manager(self.hooks_manager)
         self.bouncers[name] = bouncer
         logger.info(f"✅ Registered bouncer: {name}")
     

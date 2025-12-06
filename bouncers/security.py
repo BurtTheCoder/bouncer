@@ -28,16 +28,24 @@ class SecurityBouncer(BaseBouncer):
     async def check(self, event):
         """Check for security vulnerabilities"""
         from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
-        
+
         logger.info(f"🕵️  Security Bouncer checking: {event.path.name}")
-        
-        options = ClaudeAgentOptions(
-            cwd=str(event.path.parent),
-            allowed_tools=["Read", "Bash"],  # Never auto-fix security issues
-            permission_mode="plan",  # Always require approval
-            system_prompt=self._get_system_prompt(),
-            output_format=self._get_output_schema()
-        )
+
+        # Build options dict
+        options_kwargs = {
+            'cwd': str(event.path.parent),
+            'allowed_tools': ["Read", "Bash"],  # Never auto-fix security issues
+            'permission_mode': "plan",  # Always require approval
+            'system_prompt': self._get_system_prompt(),
+            'output_format': self._get_output_schema()
+        }
+
+        # Add hooks if configured
+        hooks_config = self.get_hooks_config()
+        if hooks_config:
+            options_kwargs['hooks'] = hooks_config
+
+        options = ClaudeAgentOptions(**options_kwargs)
         
         try:
             async with ClaudeSDKClient(options=options) as client:

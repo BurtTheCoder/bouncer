@@ -164,22 +164,147 @@ integrations:
     default_priority: "Medium"
 
 # Notifications Configuration
+# All notifiers support: enabled, min_severity, detail_level
+# min_severity: info, warning, denied, error
+# detail_level: summary, detailed, full_transcript
+#
+# Environment variable overrides available:
+#   BOUNCER_SLACK_ENABLED, BOUNCER_SLACK_DETAIL_LEVEL, BOUNCER_SLACK_MIN_SEVERITY
+#   BOUNCER_DISCORD_ENABLED, BOUNCER_DISCORD_DETAIL_LEVEL, etc.
 notifications:
-  # Slack notifications
+  # Slack notifications - Real-time team collaboration
   slack:
     enabled: false
-    webhook_url: "${SLACK_WEBHOOK_URL}"
-    detail_level: "summary"  # summary, detailed, minimal
-  
-  # Discord notifications
+    webhook_url: "${SLACK_WEBHOOK_URL}"  # Set via environment variable
+    channel: "#bouncer"                   # Channel to post to
+    min_severity: warning                 # Only notify on warnings and above
+    detail_level: summary                 # summary, detailed, full_transcript
+
+  # Discord notifications - Community projects
   discord:
     enabled: false
     webhook_url: "${DISCORD_WEBHOOK_URL}"
-  
-  # File logger (always enabled)
+    username: "Bouncer Bot"               # Bot display name
+    min_severity: warning
+    detail_level: summary
+
+  # Email notifications - Formal reports via SMTP
+  email:
+    enabled: false
+    smtp_host: "${SMTP_HOST}"             # e.g., smtp.gmail.com
+    smtp_port: 587                         # 587 for TLS, 465 for SSL
+    smtp_user: "${SMTP_USER}"
+    smtp_password: "${SMTP_PASSWORD}"
+    from_email: "bouncer@your-domain.com"
+    to_emails:                             # List of recipients
+      - "team@your-domain.com"
+      - "alerts@your-domain.com"
+    use_tls: true
+    min_severity: error                    # Only email critical issues
+    detail_level: detailed                 # Include full issue details
+
+  # Microsoft Teams notifications - Enterprise environments
+  teams:
+    enabled: false
+    webhook_url: "${TEAMS_WEBHOOK_URL}"   # Incoming Webhook connector URL
+    min_severity: warning
+    detail_level: summary
+
+  # Generic webhook - Custom integrations (Zapier, IFTTT, n8n, etc.)
+  webhook:
+    enabled: false
+    webhook_url: "${GENERIC_WEBHOOK_URL}"
+    method: POST                           # POST or PUT
+    headers:                               # Custom headers
+      Authorization: "Bearer ${WEBHOOK_SECRET}"
+      Content-Type: "application/json"
+    include_timestamp: true                # Add ISO timestamp to payload
+    min_severity: info                     # Send all notifications
+    detail_level: detailed                 # Full JSON payload
+
+  # File logger - Local JSON logs for auditing
+  # Recommended: Keep enabled for debugging and compliance
   file_log:
     enabled: true
-    log_file: ".bouncer/bouncer.json"
+    log_dir: ".bouncer/logs"               # Directory for log files
+    rotation: daily                        # daily, weekly, monthly, none
+    min_severity: info                     # Log everything
+    detail_level: full_transcript          # Complete audit trail
+
+# Hooks Configuration
+# Hooks provide additional safety and audit capabilities for bouncer operations
+hooks:
+  # Master switch - disable all hooks
+  enabled: false
+
+  # Validation hooks - run before tool execution
+  validation:
+    enabled: true
+    # Block writes to sensitive files
+    block_protected_files: true
+    protected_file_patterns:
+      - ".env"
+      - "secrets"
+      - "credentials"
+      - "private_key"
+      - "id_rsa"
+    # Block hardcoded secrets in code
+    block_hardcoded_secrets: true
+    secret_patterns:
+      - "api_key"
+      - "api-key"
+      - "apikey"
+      - "password"
+      - "secret_key"
+      - "access_token"
+      - "auth_token"
+    # Block dangerous code patterns
+    block_dangerous_code: true
+    # Patterns that are always blocked
+    blocked_code_patterns:
+      - "eval("
+      - "exec("
+    # Patterns that require confirmation
+    warning_code_patterns:
+      - "os.system("
+      - "subprocess.call("
+      - "subprocess.Popen("
+      - "__import__"
+      - "rm -rf"
+      - "pickle.loads("
+      - "yaml.load("
+      - "marshal.loads("
+    # Maximum file size for writes (bytes)
+    file_size_limit: 1000000
+    # Block dangerous bash commands
+    block_dangerous_commands: true
+    dangerous_commands:
+      - "rm -rf"
+      - "dd if="
+      - "mkfs"
+      - ":(){ :|:& };:"
+      - "> /dev/sda"
+      - "chmod -R 777"
+      - "chown -R"
+    # Commands that require confirmation
+    warning_commands:
+      - "sudo"
+      - "apt-get"
+      - "yum"
+      - "systemctl"
+      - "service"
+
+  # Logging hooks - run after tool execution for audit trail
+  logging:
+    enabled: true
+    # Directory for audit logs
+    audit_dir: ".bouncer/audit"
+    # Log file writes
+    log_writes: true
+    # Log bash commands
+    log_bash: true
+    # Log all tool usage
+    log_all_tools: false
 
 # Ignore Patterns
 ignore_patterns:

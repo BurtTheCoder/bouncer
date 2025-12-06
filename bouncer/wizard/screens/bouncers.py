@@ -80,7 +80,7 @@ class BouncersScreen(Screen):
         with Container(classes="content-container"):
             with Vertical():
                 yield Static(
-                    "[bold cyan]Step 2 of 6:[/bold cyan] Select Bouncers",
+                    "[bold cyan]Step 2 of 7:[/bold cyan] Select Bouncers",
                     classes="section-title"
                 )
                 yield Static(
