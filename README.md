@@ -89,41 +89,59 @@ Now, edit `bouncer.yaml`:
 
 #### Authentication Setup
 
-Create a `.env` file for your secrets:
+Bouncer uses the [Claude Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview) and supports **two authentication methods**:
+
+**🎯 Option 1: Claude Code OAuth** (Recommended for Claude Code Subscribers)
+
+If you have a **Claude Code subscription** (Pro, Team, or Enterprise), use OAuth for **unlimited usage**:
+
+1. Install [Claude Code](https://code.claude.com)
+2. Run the `/login` command in Claude Code
+3. Bouncer will automatically use your credentials
+4. ✅ **No additional configuration needed!**
+
+**Benefits:**
+- ✅ Unlimited usage (included in your subscription)
+- ✅ No pay-per-use costs
+- ✅ Automatic credential management
+- ✅ Works across all your projects
+
+**💡 Option 2: Anthropic API Key** (For Non-Subscribers)
+
+If you don't have Claude Code, use an API key from the [Anthropic Console](https://console.anthropic.com/settings/keys):
+
+1. Create a `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Add your API key:
+   ```bash
+   ANTHROPIC_API_KEY=sk-ant-...
+   ```
+
+3. Bouncer will automatically detect and use it
+
+**Note:** API keys are pay-per-use. Claude Code subscribers should use OAuth (Option 1) for unlimited usage.
+
+**🔐 Check Authentication Status**
+
+Verify your authentication at any time:
 
 ```bash
-cp .env.example .env
+bouncer auth-status
 ```
 
-Bouncer supports **multiple authentication methods**. Choose one:
+This shows:
+- ✅ Which authentication method is active
+- 📊 Usage limits (unlimited for OAuth, pay-per-use for API keys)
+- 🔑 Credential source and masking
 
-**Option 1: Anthropic API Key** (Recommended)
-```
-ANTHROPIC_API_KEY=your_api_key_here
-SLACK_WEBHOOK_URL=your_webhook_url
-```
+**📖 Full Authentication Guide**
 
-**Option 2: AWS Bedrock**
-```
-USE_BEDROCK=true
-AWS_REGION=us-east-1
-SLACK_WEBHOOK_URL=your_webhook_url
-```
-
-**Option 3: Google Vertex AI**
-```
-USE_VERTEX=true
-GOOGLE_CLOUD_PROJECT=your-project
-SLACK_WEBHOOK_URL=your_webhook_url
-```
-
-**Option 4: Microsoft Foundry**
-```
-USE_FOUNDRY=true
-SLACK_WEBHOOK_URL=your_webhook_url
-```
-
-**📚 Full authentication guide:** [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)
+For Docker, CI/CD, and advanced scenarios, see:
+- **[docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)** - Complete authentication guide
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Docker and production deployment
 
 ### 3. Run Bouncer
 

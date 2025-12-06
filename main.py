@@ -183,7 +183,7 @@ Examples:
     
     parser.add_argument(
         'command',
-        choices=['start', 'scan', 'init', 'version', 'validate-config', 'wizard'],
+        choices=['start', 'scan', 'init', 'version', 'validate-config', 'wizard', 'auth-status'],
         help='Command to execute'
     )
     
@@ -312,7 +312,6 @@ Examples:
             from bouncer.wizard import BouncerWizard
             wizard = BouncerWizard(config_path=args.config)
             # Textual handles its own event loop
-            import sys
             sys.exit(wizard.run())
         except ImportError:
             logger.error("❌ Textual library not installed")
@@ -400,6 +399,77 @@ Examples:
                 
         except Exception as e:
             logger.error(f"❌ Scan failed: {e}", exc_info=True)
+            sys.exit(1)
+    
+    elif args.command == 'auth-status':
+        # Check authentication status
+        import os
+        
+        logger.info("🔐 Checking authentication status...\n")
+        
+        has_api_key = bool(os.getenv('ANTHROPIC_API_KEY'))
+        claude_json = Path.home() / '.claude.json'
+        has_oauth = claude_json.exists()
+        
+        # Check macOS Keychain (if on macOS)
+        has_keychain = False
+        if sys.platform == 'darwin':
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ['security', 'find-generic-password', '-s', 'Claude Code', '-w'],
+                    capture_output=True,
+                    text=True
+                )
+                has_keychain = result.returncode == 0
+            except:
+                pass
+        
+        authenticated = has_api_key or has_oauth or has_keychain
+        
+        if authenticated:
+            logger.info("✅ AUTHENTICATED\n")
+            
+            if has_api_key:
+                api_key = os.getenv('ANTHROPIC_API_KEY')
+                masked_key = api_key[:7] + '...' + api_key[-4:] if len(api_key) > 11 else '***'
+                logger.info(f"  🔑 API Key: {masked_key}")
+                logger.info(f"     Source: ANTHROPIC_API_KEY environment variable")
+                logger.info(f"     Usage: Unlimited (pay-per-use)\n")
+            
+            if has_keychain:
+                logger.info(f"  🔐 OAuth: Active (macOS Keychain)")
+                logger.info(f"     Source: Claude Code authentication")
+                logger.info(f"     Usage: Unlimited (Claude Code subscription)\n")
+            
+            if has_oauth and not has_keychain:
+                logger.info(f"  🔐 OAuth: Active")
+                logger.info(f"     Source: {claude_json}")
+                logger.info(f"     Usage: Unlimited (Claude Code subscription)\n")
+            
+            if args.verbose:
+                logger.info("📋 Authentication Priority:")
+                logger.info("   1. ANTHROPIC_API_KEY (if set)")
+                logger.info("   2. Claude Code OAuth (if authenticated)\n")
+            
+            logger.info("✅ Bouncer is ready to use!")
+            return
+        
+        else:
+            logger.error("❌ NOT AUTHENTICATED\n")
+            logger.info("You need to authenticate before using Bouncer.\n")
+            logger.info("🎯 RECOMMENDED: Claude Code OAuth (Unlimited Usage)")
+            logger.info("   If you have a Claude Code subscription:")
+            logger.info("   1. Install Claude Code: https://code.claude.com")
+            logger.info("   2. Run the /login command")
+            logger.info("   3. Bouncer will automatically use your credentials\n")
+            logger.info("💡 ALTERNATIVE: API Key (Pay-per-use)")
+            logger.info("   If you don't have Claude Code:")
+            logger.info("   1. Get an API key: https://console.anthropic.com/settings/keys")
+            logger.info("   2. Set environment variable:")
+            logger.info("      export ANTHROPIC_API_KEY=sk-ant-...")
+            logger.info("   3. Or create a .env file with your key\n")
+            logger.info("📖 For more details, see: docs/AUTHENTICATION.md")
             sys.exit(1)
     
     elif args.command == 'start':
