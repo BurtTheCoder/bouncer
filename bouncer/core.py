@@ -4,13 +4,18 @@ Core orchestrator that manages file watching and bouncer coordination
 """
 
 import asyncio
+import re
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Constants for queue size limits
+DEFAULT_EVENT_QUEUE_SIZE = 1000
+DEFAULT_RESULTS_QUEUE_SIZE = 1000
 
 
 @dataclass
@@ -19,18 +24,18 @@ class FileChangeEvent:
     path: Path
     event_type: str  # 'created', 'modified', 'deleted'
     timestamp: float
-    metadata: Dict[str, Any] = None
+    metadata: Optional[Dict[str, Any]] = field(default_factory=dict)
 
 
-@dataclass
+@dataclass(frozen=True)
 class BouncerResult:
-    """Result from a bouncer check"""
+    """Result from a bouncer check (immutable)"""
     bouncer_name: str
     file_path: Path
     status: str  # 'approved', 'denied', 'fixed', 'warning'
-    issues_found: List[Dict[str, Any]]
-    fixes_applied: List[Dict[str, Any]]
-    messages: List[str]
+    issues_found: tuple  # Using tuple for immutability
+    fixes_applied: tuple  # Using tuple for immutability
+    messages: tuple  # Using tuple for immutability
     timestamp: float
 
 
@@ -47,11 +52,23 @@ class BouncerOrchestrator:
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.watch_dir = Path(config['watch_dir'])
-        self.event_queue = asyncio.Queue()
-        self.results_queue = asyncio.Queue()
-        self.bouncers = {}
-        self.notifiers = []
+        self.watch_dir = Path(config['watch_dir']).resolve()
+
+        # Initialize path validation with allowed directories for security
+        try:
+            from checks.tools import set_allowed_directories
+            set_allowed_directories([self.watch_dir])
+            logger.debug(f"🔒 Path validation initialized for: {self.watch_dir}")
+        except ImportError:
+            logger.debug("Path validation not available (checks.tools not found)")
+
+        # Add queue size limits to prevent unbounded memory growth
+        event_queue_size = config.get('event_queue_size', DEFAULT_EVENT_QUEUE_SIZE)
+        results_queue_size = config.get('results_queue_size', DEFAULT_RESULTS_QUEUE_SIZE)
+        self.event_queue: asyncio.Queue = asyncio.Queue(maxsize=event_queue_size)
+        self.results_queue: asyncio.Queue = asyncio.Queue(maxsize=results_queue_size)
+        self.bouncers: Dict[str, Any] = {}
+        self.notifiers: List[Any] = []
         self.running = False
         self.mcp_manager = None
         self.integration_actions = None
@@ -327,46 +344,93 @@ class BouncerOrchestrator:
         return summary
     
     async def _get_all_files(self, target_dir: Path) -> List[Path]:
-        """Get all files in directory (excluding ignored patterns)"""
-        files = []
-        
-        for path in target_dir.rglob('*'):
-            if path.is_file() and not self.should_ignore(path):
-                files.append(path)
-        
-        return files
-    
+        """Get all files in directory (excluding ignored patterns) - async version"""
+        # Use asyncio.to_thread to avoid blocking the event loop for large directories
+        def _scan_directory():
+            files = []
+            for path in target_dir.rglob('*'):
+                if path.is_file() and not self.should_ignore(path):
+                    files.append(path)
+            return files
+
+        return await asyncio.to_thread(_scan_directory)
+
+    @staticmethod
+    def _validate_git_since_param(since: str) -> bool:
+        """
+        Validate the 'since' parameter to prevent command injection.
+
+        Allows patterns like:
+        - "1 hour ago"
+        - "24 hours ago"
+        - "2 days ago"
+        - "1 week ago"
+        - "2023-01-01"
+        - "yesterday"
+        """
+        if not since:
+            return False
+
+        # Define allowed patterns
+        allowed_patterns = [
+            r'^\d+\s+(second|minute|hour|day|week|month|year)s?\s+ago$',  # "N units ago"
+            r'^yesterday$',
+            r'^today$',
+            r'^\d{4}-\d{2}-\d{2}$',  # ISO date format
+            r'^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?$',  # ISO datetime format
+        ]
+
+        for pattern in allowed_patterns:
+            if re.match(pattern, since.strip(), re.IGNORECASE):
+                return True
+
+        return False
+
     async def _get_git_changed_files(self, target_dir: Path, since: Optional[str] = None) -> List[Path]:
         """Get files changed in git since a specific time"""
         import subprocess
-        
+
         try:
-            # Build git command
+            # Validate and sanitize 'since' parameter to prevent command injection
             if since:
-                # Get files changed since a specific time
-                cmd = ['git', '-C', str(target_dir), 'diff', '--name-only', f'@{{"{since}"}}', 'HEAD']
+                if not self._validate_git_since_param(since):
+                    logger.error(f"Invalid 'since' parameter format: {since}")
+                    logger.warning("Falling back to full scan")
+                    return await self._get_all_files(target_dir)
+                # Use a safer git log approach instead of @{} syntax
+                cmd = ['git', '-C', str(target_dir), 'log', '--name-only', '--pretty=format:', f'--since={since}']
             else:
                 # Get files changed since last commit
                 cmd = ['git', '-C', str(target_dir), 'diff', '--name-only', 'HEAD~1', 'HEAD']
-            
-            # Run git command
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            
+
+            # Run git command in a thread to avoid blocking
+            def _run_git():
+                return subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                    timeout=60  # Add timeout for safety
+                )
+
+            result = await asyncio.to_thread(_run_git)
+
             # Parse output
             files = []
+            seen = set()  # Deduplicate file paths
             for line in result.stdout.strip().split('\n'):
-                if line:
+                if line and line not in seen:
+                    seen.add(line)
                     file_path = target_dir / line.strip()
                     if file_path.exists() and file_path.is_file() and not self.should_ignore(file_path):
                         files.append(file_path)
-            
+
             return files
-            
+
+        except subprocess.TimeoutExpired:
+            logger.error("Git command timed out")
+            logger.warning("Falling back to full scan")
+            return await self._get_all_files(target_dir)
         except subprocess.CalledProcessError as e:
             logger.error(f"Git command failed: {e}")
             logger.warning("Falling back to full scan")

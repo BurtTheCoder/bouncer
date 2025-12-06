@@ -257,7 +257,7 @@ class LogInvestigator(BaseBouncer):
         """Filter out errors that have already been investigated"""
         try:
             fixed_errors = json.loads(self.fixed_errors_file.read_text())
-        except:
+        except (json.JSONDecodeError, FileNotFoundError, IOError):
             fixed_errors = {}
         
         new_errors = []
@@ -282,7 +282,7 @@ class LogInvestigator(BaseBouncer):
         """Mark error as investigated"""
         try:
             fixed_errors = json.loads(self.fixed_errors_file.read_text())
-        except:
+        except (json.JSONDecodeError, FileNotFoundError, IOError):
             fixed_errors = {}
         
         error_hash = self._hash_error(error)
@@ -300,7 +300,7 @@ class LogInvestigator(BaseBouncer):
         
         options = ClaudeAgentOptions(
             cwd=str(self.codebase_dir),
-            structured_output=BOUNCER_OUTPUT_SCHEMA,
+            output_format=BOUNCER_OUTPUT_SCHEMA,
             allowed_tools=["Read", "List", "Search"],  # No Write for investigation
             permission_mode="plan",  # Always plan mode for investigation
             system_prompt=self._get_system_prompt()
@@ -310,15 +310,17 @@ class LogInvestigator(BaseBouncer):
             async with ClaudeSDKClient(options=options) as client:
                 prompt = self._build_investigation_prompt(error)
                 await client.query(prompt)
-                
+
                 response_text = ""
                 async for msg in client.receive_response():
                     if hasattr(msg, 'content'):
-                        response_text += msg.content
-                
+                        for block in msg.content:
+                            if hasattr(block, 'text'):
+                                response_text = block.text  # Only keep last message (structured JSON)
+
                 # Parse structured output
                 result = json.loads(response_text) if response_text else {}
-                
+
                 return {
                     'issues': result.get('issues', []),
                     'fixes': result.get('fixes', []),
@@ -400,16 +402,16 @@ When investigating errors:
 Be thorough but efficient. Focus on the most likely causes first."""
     
     def _create_result(self, event, status: str, issues: List, fixes: List, messages: List):
-        """Create a BouncerResult"""
+        """Create a BouncerResult (with tuples for immutability)"""
         from bouncer.core import BouncerResult
         from datetime import datetime
-        
+
         return BouncerResult(
             bouncer_name='log_investigator',
             file_path=event.path,
             status=status,
-            issues_found=issues,
-            fixes_applied=fixes,
-            messages=messages,
+            issues_found=tuple(issues),
+            fixes_applied=tuple(fixes),
+            messages=tuple(messages),
             timestamp=datetime.now().timestamp()
         )

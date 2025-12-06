@@ -33,8 +33,8 @@ class AccessibilityBouncer(BaseBouncer):
         logger.info(f"♿ Accessibility Bouncer checking: {event.path.name}")
         
         options = ClaudeAgentOptions(
-            cwd=str(event.path.parent,
-            structured_output=BOUNCER_OUTPUT_SCHEMA),
+            cwd=str(event.path.parent),
+            output_format=BOUNCER_OUTPUT_SCHEMA,
             allowed_tools=["Read", "Write"],
             permission_mode="acceptEdits" if self.auto_fix else "plan",
             system_prompt=self._get_system_prompt()

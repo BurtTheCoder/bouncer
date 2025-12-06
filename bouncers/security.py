@@ -36,7 +36,7 @@ class SecurityBouncer(BaseBouncer):
             allowed_tools=["Read", "Bash"],  # Never auto-fix security issues
             permission_mode="plan",  # Always require approval
             system_prompt=self._get_system_prompt(),
-            structured_output=self._get_output_schema()
+            output_format=self._get_output_schema()
         )
         
         try:

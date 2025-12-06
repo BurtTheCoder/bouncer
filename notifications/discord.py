@@ -3,7 +3,7 @@ Discord Notifier
 Sends bouncer results to Discord via webhooks
 """
 
-import requests
+import aiohttp
 import logging
 from .formatter import NotificationFormatter
 from typing import Dict, Any
@@ -27,32 +27,35 @@ class DiscordNotifier:
             logger.warning("Discord notifications enabled but no webhook_url provided")
             self.enabled = False
     
-    def send(self, result: Dict[str, Any]):
-        """Send notification to Discord"""
+    async def send(self, result: Dict[str, Any]):
+        """Send notification to Discord (async)"""
         if not self.enabled:
             return
-        
+
         # Check severity threshold
         severity = result.get('severity', 'info')
         if not self._should_notify(severity):
             return
-        
+
         try:
             embed = self._create_embed(result)
             payload = {
                 'username': self.username,
                 'embeds': [embed]
             }
-            
-            response = requests.post(
-                self.webhook_url,
-                json=payload,
-                timeout=10
-            )
-            response.raise_for_status()
-            
+            timeout = aiohttp.ClientTimeout(total=10)
+
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.post(
+                    self.webhook_url,
+                    json=payload
+                ) as response:
+                    response.raise_for_status()
+
             logger.debug(f"📤 Discord notification sent for {result.get('file_path')}")
-        
+
+        except aiohttp.ClientError as e:
+            logger.error(f"HTTP error sending Discord notification: {e}")
         except Exception as e:
             logger.error(f"Failed to send Discord notification: {e}")
     

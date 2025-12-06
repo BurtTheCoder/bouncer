@@ -89,26 +89,45 @@ async def validate_before_write(input_data, tool_use_id, context):
             }
         }
     
-    # Check 4: Dangerous code patterns
-    dangerous_patterns = [
+    # Check 4: High-risk code patterns (always deny)
+    high_risk_patterns = [
         "eval(",
         "exec(",
-        "os.system(",
-        "subprocess.call(",
-        "__import__",
-        "rm -rf"
     ]
-    
-    found_dangerous = [p for p in dangerous_patterns if p in content]
-    
-    if found_dangerous:
-        logger.warning(f"⚠️  Dangerous patterns in {file_path}: {found_dangerous}")
-        # Don't block, but warn
+
+    found_high_risk = [p for p in high_risk_patterns if p in content]
+
+    if found_high_risk:
+        logger.warning(f"❌ High-risk code patterns in {file_path}: {found_high_risk}")
         return {
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
-                "permissionDecision": "allow",
-                "permissionDecisionReason": f"Warning: Dangerous patterns detected: {', '.join(found_dangerous)}. Review carefully."
+                "permissionDecision": "deny",
+                "permissionDecisionReason": f"High-risk code patterns blocked: {', '.join(found_high_risk)}. Use safer alternatives (e.g., ast.literal_eval, importlib)."
+            }
+        }
+
+    # Check 5: Medium-risk code patterns (require review/ask)
+    medium_risk_patterns = [
+        "os.system(",
+        "subprocess.call(",
+        "subprocess.Popen(",
+        "__import__",
+        "rm -rf",
+        "pickle.loads(",
+        "yaml.load(",  # unsafe yaml.load without Loader
+        "marshal.loads(",
+    ]
+
+    found_medium_risk = [p for p in medium_risk_patterns if p in content]
+
+    if found_medium_risk:
+        logger.warning(f"⚠️  Medium-risk patterns in {file_path}: {found_medium_risk}")
+        return {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "ask",
+                "permissionDecisionReason": f"Medium-risk patterns detected: {', '.join(found_medium_risk)}. Please confirm this is intentional and safe."
             }
         }
     

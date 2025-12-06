@@ -3,7 +3,7 @@ Generic Webhook Notifier
 Sends bouncer results to any webhook endpoint
 """
 
-import requests
+import aiohttp
 import logging
 from .formatter import NotificationFormatter
 from typing import Dict, Any
@@ -29,41 +29,43 @@ class WebhookNotifier:
             logger.warning("Webhook notifications enabled but no webhook_url provided")
             self.enabled = False
     
-    def send(self, result: Dict[str, Any]):
-        """Send notification to webhook"""
+    async def send(self, result: Dict[str, Any]):
+        """Send notification to webhook (async)"""
         if not self.enabled:
             return
-        
+
         # Check severity threshold
         severity = result.get('severity', 'info')
         if not self._should_notify(severity):
             return
-        
+
         try:
             payload = self._create_payload(result)
-            
-            if self.method == 'POST':
-                response = requests.post(
-                    self.webhook_url,
-                    json=payload,
-                    headers=self.headers,
-                    timeout=10
-                )
-            elif self.method == 'PUT':
-                response = requests.put(
-                    self.webhook_url,
-                    json=payload,
-                    headers=self.headers,
-                    timeout=10
-                )
-            else:
-                logger.error(f"Unsupported HTTP method: {self.method}")
-                return
-            
-            response.raise_for_status()
-            
+            timeout = aiohttp.ClientTimeout(total=10)
+
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                if self.method == 'POST':
+                    async with session.post(
+                        self.webhook_url,
+                        json=payload,
+                        headers=self.headers
+                    ) as response:
+                        response.raise_for_status()
+                elif self.method == 'PUT':
+                    async with session.put(
+                        self.webhook_url,
+                        json=payload,
+                        headers=self.headers
+                    ) as response:
+                        response.raise_for_status()
+                else:
+                    logger.error(f"Unsupported HTTP method: {self.method}")
+                    return
+
             logger.debug(f"📤 Webhook notification sent for {result.get('file_path')}")
-        
+
+        except aiohttp.ClientError as e:
+            logger.error(f"HTTP error sending webhook notification: {e}")
         except Exception as e:
             logger.error(f"Failed to send webhook notification: {e}")
     

@@ -3,7 +3,7 @@ Microsoft Teams Notifier
 Sends bouncer results to Microsoft Teams via webhooks
 """
 
-import requests
+import aiohttp
 import logging
 from .formatter import NotificationFormatter
 from typing import Dict, Any
@@ -26,28 +26,31 @@ class TeamsNotifier:
             logger.warning("Teams notifications enabled but no webhook_url provided")
             self.enabled = False
     
-    def send(self, result: Dict[str, Any]):
-        """Send notification to Microsoft Teams"""
+    async def send(self, result: Dict[str, Any]):
+        """Send notification to Microsoft Teams (async)"""
         if not self.enabled:
             return
-        
+
         # Check severity threshold
         severity = result.get('severity', 'info')
         if not self._should_notify(severity):
             return
-        
+
         try:
             card = self._create_adaptive_card(result)
-            
-            response = requests.post(
-                self.webhook_url,
-                json=card,
-                timeout=10
-            )
-            response.raise_for_status()
-            
+            timeout = aiohttp.ClientTimeout(total=10)
+
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.post(
+                    self.webhook_url,
+                    json=card
+                ) as response:
+                    response.raise_for_status()
+
             logger.debug(f"📤 Teams notification sent for {result.get('file_path')}")
-        
+
+        except aiohttp.ClientError as e:
+            logger.error(f"HTTP error sending Teams notification: {e}")
         except Exception as e:
             logger.error(f"Failed to send Teams notification: {e}")
     
