@@ -120,19 +120,29 @@ class SlackNotifier:
                 'fixed': '🔧',
                 'warning': '⚠️'
             }.get(result.status, '❓')
-            
+
             result_text = f"*{bouncer_emoji} {result.bouncer_name}:* {result.status}"
-            
+
             if result.issues_found:
                 result_text += f"\n• Issues: {len(result.issues_found)}"
-            
+
             if result.fixes_applied:
                 result_text += f"\n• Fixes: {len(result.fixes_applied)}"
-            
+
+            # Add message preview if available
             if result.messages:
-                # Add first message
-                result_text += f"\n_{result.messages[0][:100]}_"
-            
+                # Get first non-empty message
+                for msg in result.messages:
+                    if msg and msg.strip():
+                        # Truncate and clean up for Slack
+                        preview = msg.strip()[:200]
+                        if len(msg) > 200:
+                            preview += "..."
+                        # Remove markdown code blocks for cleaner display
+                        preview = preview.replace('```json', '').replace('```', '')
+                        result_text += f"\n_{preview}_"
+                        break
+
             blocks.append({
                 "type": "section",
                 "text": {
