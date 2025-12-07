@@ -49,7 +49,7 @@ class NotificationsScreen(Screen):
         """Create notification configuration widgets"""
         with Container(classes="content-container"):
             yield Static(
-                "[bold cyan]Step 3 of 7:[/bold cyan] Configure Notifications",
+                "[bold cyan]Step 3 of 8:[/bold cyan] Configure Notifications",
                 classes="section-title"
             )
             yield Static(

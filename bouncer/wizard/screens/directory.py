@@ -16,7 +16,7 @@ class DirectoryScreen(Screen):
         """Create directory selection widgets"""
         with Container(classes="content-container"):
             yield Static(
-                "[bold cyan]Step 1 of 7:[/bold cyan] Select Directory to Watch",
+                "[bold cyan]Step 1 of 8:[/bold cyan] Select Directory to Watch",
                 classes="section-title"
             )
             yield Static(

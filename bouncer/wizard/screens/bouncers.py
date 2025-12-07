@@ -79,7 +79,7 @@ class BouncersScreen(Screen):
         """Create bouncer selection widgets"""
         with Container(classes="content-container"):
             yield Static(
-                "[bold cyan]Step 2 of 7:[/bold cyan] Select Bouncers",
+                "[bold cyan]Step 2 of 8:[/bold cyan] Select Bouncers",
                 classes="section-title"
             )
             yield Static(

@@ -16,7 +16,7 @@ class HooksScreen(Screen):
         with Container(classes="content-container"):
             with Vertical():
                 yield Static(
-                    "[bold cyan]Step 5 of 7:[/bold cyan] Configure Hooks",
+                    "[bold cyan]Step 5 of 8:[/bold cyan] Configure Hooks",
                     classes="section-title"
                 )
                 yield Static(
@@ -153,9 +153,9 @@ class HooksScreen(Screen):
             self.app.pop_screen()
 
         elif event.button.id == "skip":
-            # Skip hooks, move to review
-            from .review import ReviewScreen
-            self.app.push_screen(ReviewScreen())
+            # Skip hooks, move to scheduling
+            from .scheduling import SchedulingScreen
+            self.app.push_screen(SchedulingScreen())
 
         elif event.button.id == "continue":
             # Save hooks configuration
@@ -186,6 +186,6 @@ class HooksScreen(Screen):
                 }
             }
 
-            # Move to next screen
-            from .review import ReviewScreen
-            self.app.push_screen(ReviewScreen())
+            # Move to scheduling screen
+            from .scheduling import SchedulingScreen
+            self.app.push_screen(SchedulingScreen())
