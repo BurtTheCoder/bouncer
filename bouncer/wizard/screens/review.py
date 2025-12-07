@@ -16,7 +16,7 @@ class ReviewScreen(Screen):
         """Create review widgets"""
         with Container(classes="content-container"):
             yield Static(
-                "[bold cyan]Step 6 of 7:[/bold cyan] Review Configuration",
+                "[bold cyan]Step 7 of 8:[/bold cyan] Review Configuration",
                 classes="section-title"
             )
             yield Static(

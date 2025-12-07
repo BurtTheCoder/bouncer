@@ -15,6 +15,7 @@ from .screens.bouncers import BouncersScreen
 from .screens.notifications import NotificationsScreen
 from .screens.integrations import IntegrationsScreen
 from .screens.hooks import HooksScreen
+from .screens.scheduling import SchedulingScreen
 from .screens.review import ReviewScreen
 from .screens.success import SuccessScreen
 
@@ -39,7 +40,8 @@ class BouncerWizard(App):
         super().__init__()
         self.config_path = config_path or Path("bouncer.yaml")
         self.config_data: Dict[str, Any] = {}
-        
+        self.scheduling_config: Optional[Dict[str, Any]] = None
+
         # Load existing config if present
         if self.config_path.exists():
             try:

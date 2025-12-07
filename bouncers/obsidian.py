@@ -206,7 +206,9 @@ Obsidian-Specific Checks:
 - Embeds and transclusions
 
 When you find issues:
-{'1. Fix the content\n2. Use Write tool to save the fixed file\n3. Report what you fixed' if self.auto_fix else '1. Report what is wrong\n2. Explain how to fix it'}
+1. {'Fix the content' if self.auto_fix else 'Report what is wrong'}
+2. {'Use Write tool to save the fixed file' if self.auto_fix else 'Explain how to fix it'}
+3. {'Report what you fixed' if self.auto_fix else 'List all issues found'}
 
 Build a well-connected, valuable knowledge base.
 """
@@ -235,6 +237,8 @@ Build a well-connected, valuable knowledge base.
         except ValueError:
             current_folder = event.path.parent.name
 
+        file_name = event.path.name
+
         fix_action = f"""
 ACTION REQUIRED:
 1. First, use Bash to list vault folders: ls -d */ in {vault_root}
@@ -243,7 +247,7 @@ ACTION REQUIRED:
    a) What type of note is this? (person, project, security research, topic, etc.)
    b) Is it in the correct folder for that type?
 4. If the file is in the WRONG folder:
-   - Use Bash with mv command to move it: mv "{file_path}" "{vault_root}/CorrectFolder/{event.path.name}"
+   - Use Bash with mv command to move it: mv "{file_path}" "{vault_root}/CorrectFolder/{file_name}"
    - Make sure the destination folder exists first
 5. If content issues found (frontmatter, tags, wikilinks), fix them with Write tool
 6. Provide your JSON report of what you fixed including any file moves
