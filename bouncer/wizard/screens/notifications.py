@@ -49,7 +49,7 @@ class NotificationsScreen(Screen):
         """Create notification configuration widgets"""
         with Container(classes="content-container"):
             yield Static(
-                "[bold cyan]Step 3 of 8:[/bold cyan] Configure Notifications",
+                "[bold cyan]Step 6 of 12:[/bold cyan] Configure Notifications",
                 classes="section-title"
             )
             yield Static(
@@ -71,9 +71,7 @@ class NotificationsScreen(Screen):
             yield Static(
                 "\n[bold yellow]Environment Variables:[/bold yellow]\n"
                 "Set webhook URLs and credentials as environment variables.\n"
-                "[dim]Example: export SLACK_WEBHOOK_URL=https://hooks.slack.com/...[/dim]\n\n"
-                "[dim]Advanced settings (severity, detail level) can be configured\n"
-                "in bouncer.yaml after running the wizard.[/dim]",
+                "[dim]Example: export SLACK_WEBHOOK_URL=https://hooks.slack.com/...[/dim]",
                 classes="help-text"
             )
 
@@ -117,26 +115,15 @@ class NotificationsScreen(Screen):
                 notifier_cfg.setdefault('detail_level', 'summary')
 
                 # Set default values based on notifier type
-                if notifier_id == 'slack':
-                    notifier_cfg.setdefault('webhook_url', '${SLACK_WEBHOOK_URL}')
-                    notifier_cfg.setdefault('channel', '#bouncer')
-                elif notifier_id == 'discord':
-                    notifier_cfg.setdefault('webhook_url', '${DISCORD_WEBHOOK_URL}')
+                # Webhook URLs will be collected in the next screen
+                if notifier_id == 'discord':
                     notifier_cfg.setdefault('username', 'Bouncer Bot')
                 elif notifier_id == 'email':
-                    notifier_cfg.setdefault('smtp_host', '${SMTP_HOST}')
                     notifier_cfg.setdefault('smtp_port', 587)
-                    notifier_cfg.setdefault('smtp_user', '${SMTP_USER}')
-                    notifier_cfg.setdefault('smtp_password', '${SMTP_PASSWORD}')
-                    notifier_cfg.setdefault('from_email', 'bouncer@example.com')
-                    notifier_cfg.setdefault('to_emails', ['team@example.com'])
                     notifier_cfg.setdefault('use_tls', True)
                     notifier_cfg.setdefault('min_severity', 'error')
                     notifier_cfg.setdefault('detail_level', 'detailed')
-                elif notifier_id == 'teams':
-                    notifier_cfg.setdefault('webhook_url', '${TEAMS_WEBHOOK_URL}')
                 elif notifier_id == 'webhook':
-                    notifier_cfg.setdefault('webhook_url', '${GENERIC_WEBHOOK_URL}')
                     notifier_cfg.setdefault('method', 'POST')
                     notifier_cfg.setdefault('include_timestamp', True)
                     notifier_cfg.setdefault('min_severity', 'info')
@@ -147,6 +134,6 @@ class NotificationsScreen(Screen):
                     notifier_cfg.setdefault('min_severity', 'info')
                     notifier_cfg.setdefault('detail_level', 'full_transcript')
 
-            # Move to next screen
-            from .integrations import IntegrationsScreen
-            self.app.push_screen(IntegrationsScreen())
+            # Move to notification details screen
+            from .notification_details import NotificationDetailsScreen
+            self.app.push_screen(NotificationDetailsScreen())
