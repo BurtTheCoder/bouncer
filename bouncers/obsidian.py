@@ -67,7 +67,7 @@ class ObsidianBouncer(BaseBouncer):
                 await client.query(prompt)
 
                 # Collect agent responses and log activity
-                response_text = ""
+                all_text_responses = []
                 message_count = 0
                 async for msg in client.receive_response():
                     message_count += 1
@@ -90,7 +90,9 @@ class ObsidianBouncer(BaseBouncer):
                                 tool_name = getattr(block, 'name', 'unknown')
                                 logger.info(f"    🔧 Agent using tool: {tool_name}")
                             elif block_type == 'text':
-                                response_text = getattr(block, 'text', '')
+                                text = getattr(block, 'text', '')
+                                if text:
+                                    all_text_responses.append(text)
 
                     # Format 3: Check for tool_calls attribute
                     if hasattr(msg, 'tool_calls') and msg.tool_calls:
@@ -100,9 +102,16 @@ class ObsidianBouncer(BaseBouncer):
 
                     # Format 4: Direct text attribute
                     if hasattr(msg, 'text') and msg.text:
-                        response_text = msg.text
+                        all_text_responses.append(msg.text)
+
+                    # Format 5: ResultMessage with result attribute
+                    if hasattr(msg, 'result') and msg.result:
+                        all_text_responses.append(str(msg.result))
 
                 logger.debug(f"Agent finished with {message_count} messages")
+
+                # Combine all text responses
+                response_text = "\n\n".join(all_text_responses)
                 result_data = self._parse_response(response_text)
                 status = self._determine_status(result_data)
                 
@@ -269,20 +278,58 @@ Check for:
     
     def _parse_response(self, response_text: str) -> dict:
         """Parse Obsidian check response"""
+        import re
+
+        # First try direct JSON parse
         try:
             return json.loads(response_text)
         except json.JSONDecodeError:
-            # Detect common issues from text
-            has_issues = any(keyword in response_text.lower() for keyword in [
-                'broken', 'missing', 'orphaned', 'invalid', 'empty', 'stub'
-            ])
-            
-            return {
-                'status': 'issues_found' if has_issues else 'clean',
-                'issues': [],
-                'fixes': [],
-                'messages': [response_text]
-            }
+            pass
+
+        # Try to extract JSON from markdown code blocks
+        json_patterns = [
+            r'```json\s*([\s\S]*?)\s*```',  # ```json ... ```
+            r'```\s*([\s\S]*?)\s*```',       # ``` ... ```
+            r'\{[\s\S]*"status"[\s\S]*\}',   # Raw JSON object with status
+        ]
+
+        for pattern in json_patterns:
+            matches = re.findall(pattern, response_text)
+            for match in matches:
+                try:
+                    # Clean up the match
+                    json_str = match.strip()
+                    if not json_str.startswith('{'):
+                        # Find the JSON object within the match
+                        start = json_str.find('{')
+                        if start >= 0:
+                            json_str = json_str[start:]
+                    parsed = json.loads(json_str)
+                    if isinstance(parsed, dict):
+                        # Ensure we have the required fields
+                        if 'messages' not in parsed:
+                            parsed['messages'] = [response_text]
+                        return parsed
+                except json.JSONDecodeError:
+                    continue
+
+        # Fallback: extract information from text
+        has_issues = any(keyword in response_text.lower() for keyword in [
+            'broken', 'missing', 'orphaned', 'invalid', 'empty', 'stub',
+            'issue', 'error', 'fix', 'problem'
+        ])
+
+        has_fixes = any(keyword in response_text.lower() for keyword in [
+            'fixed', 'applied', 'corrected', 'updated', 'added frontmatter',
+            'added tags', 'added wikilinks'
+        ])
+
+        return {
+            'status': 'fixed' if has_fixes else ('issues_found' if has_issues else 'clean'),
+            'issues': [],
+            'fixes': [],
+            'messages': [response_text] if response_text else ['No response from agent']
+        }
     
     def _determine_status(self, result_data: dict) -> str:
         """Determine status from result data"""
