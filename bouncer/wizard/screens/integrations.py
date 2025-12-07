@@ -43,7 +43,7 @@ class IntegrationsScreen(Screen):
         """Create integration configuration widgets"""
         with Container(classes="content-container"):
             yield Static(
-                "[bold cyan]Step 4 of 8:[/bold cyan] Configure Integrations",
+                "[bold cyan]Step 8 of 12:[/bold cyan] Configure Integrations",
                 classes="section-title"
             )
             yield Static(

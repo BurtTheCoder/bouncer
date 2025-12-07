@@ -16,7 +16,7 @@ class DirectoryScreen(Screen):
         """Create directory selection widgets"""
         with Container(classes="content-container"):
             yield Static(
-                "[bold cyan]Step 1 of 8:[/bold cyan] Select Directory to Watch",
+                "[bold cyan]Step 1 of 12:[/bold cyan] Select Directory to Watch",
                 classes="section-title"
             )
             yield Static(
@@ -89,7 +89,7 @@ class DirectoryScreen(Screen):
             
             # Save to config
             self.app.set_config_value('watch_dir', str(dir_path.absolute()))
-            
-            # Move to next screen
-            from .bouncers import BouncersScreen
-            self.app.push_screen(BouncersScreen())
+
+            # Move to watcher settings screen
+            from .watcher import WatcherScreen
+            self.app.push_screen(WatcherScreen())

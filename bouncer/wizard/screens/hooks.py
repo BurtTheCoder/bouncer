@@ -16,7 +16,7 @@ class HooksScreen(Screen):
         with Container(classes="content-container"):
             with Vertical():
                 yield Static(
-                    "[bold cyan]Step 5 of 8:[/bold cyan] Configure Hooks",
+                    "[bold cyan]Step 9 of 12:[/bold cyan] Configure Hooks",
                     classes="section-title"
                 )
                 yield Static(

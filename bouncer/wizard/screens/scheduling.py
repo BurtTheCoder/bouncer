@@ -29,7 +29,7 @@ class SchedulingScreen(Screen):
 
         with Container(classes="content-container"):
             yield Static(
-                "[bold cyan]Step 6 of 8:[/bold cyan] Schedule Automated Scans",
+                "[bold cyan]Step 10 of 12:[/bold cyan] Schedule Automated Scans",
                 classes="section-title"
             )
             yield Static(
@@ -108,7 +108,8 @@ class SchedulingScreen(Screen):
             self.app.pop_screen()
         elif event.button.id == "skip":
             self.app.scheduling_config = None
-            self.app.push_screen("review")
+            from .ignore_patterns import IgnorePatternsScreen
+            self.app.push_screen(IgnorePatternsScreen())
         elif event.button.id == "continue":
             self._save_and_continue()
 
@@ -132,7 +133,8 @@ class SchedulingScreen(Screen):
                 'report_only': self.query_one("#report-only", Checkbox).value,
             }
 
-        self.app.push_screen("review")
+        from .ignore_patterns import IgnorePatternsScreen
+        self.app.push_screen(IgnorePatternsScreen())
 
 
 def generate_cron_entry(

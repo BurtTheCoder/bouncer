@@ -79,7 +79,7 @@ class BouncersScreen(Screen):
         """Create bouncer selection widgets"""
         with Container(classes="content-container"):
             yield Static(
-                "[bold cyan]Step 2 of 8:[/bold cyan] Select Bouncers",
+                "[bold cyan]Step 3 of 12:[/bold cyan] Select Bouncers",
                 classes="section-title"
             )
             yield Static(
@@ -146,6 +146,6 @@ class BouncersScreen(Screen):
                 if 'auto_fix' not in self.app.config_data['bouncers'][bouncer_id]:
                     self.app.config_data['bouncers'][bouncer_id]['auto_fix'] = True
             
-            # Move to next screen
-            from .notifications import NotificationsScreen
-            self.app.push_screen(NotificationsScreen())
+            # Move to bouncer details screen
+            from .bouncer_details import BouncerDetailsScreen
+            self.app.push_screen(BouncerDetailsScreen())
