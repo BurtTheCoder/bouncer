@@ -5,7 +5,7 @@ Review Configuration Screen
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, TextArea
-from textual.containers import Container, Vertical
+from textual.containers import Container, Vertical, Horizontal
 import yaml
 
 
@@ -15,27 +15,26 @@ class ReviewScreen(Screen):
     def compose(self) -> ComposeResult:
         """Create review widgets"""
         with Container(classes="content-container"):
-            with Vertical():
-                yield Static(
-                    "[bold cyan]Step 6 of 7:[/bold cyan] Review Configuration",
-                    classes="section-title"
-                )
-                yield Static(
-                    "Review your configuration below. You can edit it directly or go back to change settings.",
-                    classes="help-text"
-                )
-                
-                yield TextArea(
-                    "",
-                    language="yaml",
-                    theme="monokai",
-                    id="config-preview",
-                    classes="config-preview"
-                )
-                
-                with Container(classes="nav-buttons"):
-                    yield Button("← Back", variant="default", id="back")
-                    yield Button("Save & Continue →", variant="primary", id="save")
+            yield Static(
+                "[bold cyan]Step 6 of 7:[/bold cyan] Review Configuration",
+                classes="section-title"
+            )
+            yield Static(
+                "Review your configuration. You can edit it directly or go back.",
+                classes="help-text"
+            )
+
+            yield TextArea(
+                "",
+                language="yaml",
+                theme="monokai",
+                id="config-preview",
+                classes="config-preview"
+            )
+
+            with Horizontal(classes="nav-buttons"):
+                yield Button("← Back", variant="default", id="back")
+                yield Button("Save & Continue →", variant="primary", id="save")
     
     def on_mount(self) -> None:
         """Display current configuration"""

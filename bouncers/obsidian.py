@@ -63,17 +63,46 @@ class ObsidianBouncer(BaseBouncer):
         try:
             async with ClaudeSDKClient(options=options) as client:
                 prompt = self._build_prompt(event)
+                logger.debug(f"Sending prompt to agent for: {event.path.name}")
                 await client.query(prompt)
-                
-                # With structured_output, we get clean JSON
+
+                # Collect agent responses and log activity
                 response_text = ""
+                message_count = 0
                 async for msg in client.receive_response():
-                    if hasattr(msg, 'content'):
+                    message_count += 1
+                    msg_type = type(msg).__name__
+
+                    # Log message type for debugging
+                    logger.debug(f"    Message {message_count}: {msg_type}")
+
+                    # Check for tool use in different message formats
+                    # Format 1: msg.type == 'tool_use'
+                    if hasattr(msg, 'type') and msg.type == 'tool_use':
+                        tool_name = getattr(msg, 'name', 'unknown')
+                        logger.info(f"    🔧 Agent using tool: {tool_name}")
+
+                    # Format 2: msg has tool_use content blocks
+                    if hasattr(msg, 'content') and msg.content:
                         for block in msg.content:
-                            if hasattr(block, 'text'):
-                                # Only keep the last text block (final JSON output)
-                                response_text = block.text
-                
+                            block_type = getattr(block, 'type', None)
+                            if block_type == 'tool_use':
+                                tool_name = getattr(block, 'name', 'unknown')
+                                logger.info(f"    🔧 Agent using tool: {tool_name}")
+                            elif block_type == 'text':
+                                response_text = getattr(block, 'text', '')
+
+                    # Format 3: Check for tool_calls attribute
+                    if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                        for tc in msg.tool_calls:
+                            tool_name = getattr(tc, 'name', str(tc))
+                            logger.info(f"    🔧 Agent calling tool: {tool_name}")
+
+                    # Format 4: Direct text attribute
+                    if hasattr(msg, 'text') and msg.text:
+                        response_text = msg.text
+
+                logger.debug(f"Agent finished with {message_count} messages")
                 result_data = self._parse_response(response_text)
                 status = self._determine_status(result_data)
                 
@@ -95,75 +124,74 @@ class ObsidianBouncer(BaseBouncer):
     
     def _get_system_prompt(self) -> str:
         """Get system prompt for Obsidian checking"""
+        fix_instructions = """
+IMPORTANT - AUTO-FIX IS ENABLED:
+You MUST use the Write tool to save your fixes to the file. Do not just report what you would fix.
+
+Steps:
+1. Read the file with the Read tool
+2. Identify issues
+3. Fix the issues in the content
+4. Use the Write tool to save the fixed content back to the SAME file path
+5. Report what you fixed
+
+If you don't use the Write tool, your fixes will NOT be applied!
+""" if self.auto_fix else """
+AUTO-FIX IS DISABLED:
+Report issues but do NOT modify the file. Explain what should be fixed.
+"""
+
         return f"""
 You are an Obsidian Bouncer - a knowledge management and PKM (Personal Knowledge Management) expert.
 
+{fix_instructions}
+
 Your job:
-1. Read the Obsidian markdown note that changed
-2. Check for knowledge management best practices
-3. {'Fix issues automatically when safe' if self.auto_fix else 'Report issues without fixing'}
-4. Ensure notes are well-connected and valuable
+1. Read the Obsidian markdown note using the Read tool
+2. List the vault's folder structure using Bash: ls -d */  (in the vault root)
+3. Check for knowledge management best practices
+4. {'Use the Write tool to fix issues and save the file' if self.auto_fix else 'Report issues without modifying files'}
+5. Ensure notes are well-connected and in the correct folder
 
 Obsidian-Specific Checks:
 
-**1. Wikilinks & Connections:**
-- Broken [[wikilinks]] (check: {self.check_broken_links})
-- Orphaned notes (min connections: {self.min_connections})
-- Suggest related connections (enabled: {self.suggest_connections})
-- Validate link syntax
-- Check for circular dependencies
+**1. Folder Organization (IMPORTANT):**
+- Check if the note is in the correct folder based on its content
+- Use `ls` to see what folders exist in the vault
+- A note about a person should be in People/
+- A note about a project should be in Projects/
+- A note about a topic/concept should be in a relevant topic folder
+- Daily notes should be in the daily notes folder
+- If misplaced, recommend moving the file (but don't move it automatically)
 
 **2. Frontmatter (YAML):**
 - Required fields: {', '.join(self.required_fields)}
 - Valid YAML syntax
-- Consistent metadata schema
 - Date format validation
 - Tag presence and format
 
 **3. Tags:**
 - Tag format: {self.tag_format}
 - Max tags per note: {self.max_tags}
-- Duplicate/similar tags
-- Tag hierarchy validation (#parent/child)
-- Orphaned tags
+- Tags should be in frontmatter, not inline
 
-**4. Content Quality:**
+**4. Wikilinks & Connections:**
+- Valid [[wikilinks]] syntax
+- Min connections: {self.min_connections}
+- Suggest related connections: {self.suggest_connections}
+
+**5. Content Quality:**
 - Min note length: {self.min_note_length} characters
 - Require headings: {self.require_headings}
-- Empty or stub notes
-- Proper heading hierarchy (H1 → H2 → H3)
-- Markdown syntax validity
+- Proper heading hierarchy
 
-**5. Obsidian Syntax:**
-- `![[embeds]]` and transclusions
-- `^block-references`
-- Dataview queries (if present)
+**6. Obsidian Syntax:**
 - Callouts: `> [!note]`, `> [!warning]`, etc.
-- Code block language tags
-
-**6. Knowledge Graph:**
-- Note isolation (no incoming/outgoing links)
-- Over-connected hub notes (>50 links)
-- Suggest MOCs (Maps of Content)
-- Bidirectional linking
-
-**7. Vault Structure:**
-- Attachment folder: {self.attachment_folder}
-- Template folder: {self.template_folder}
-- Daily notes folder: {self.daily_notes_folder}
-- Proper file organization
-
-**8. Smart Suggestions:**
-- Related notes based on content
-- Missing connections to MOCs
-- Tag consolidation opportunities
-- Note splitting recommendations (if too long)
+- Code block language tags (should be in fence, not above it)
+- Embeds and transclusions
 
 When you find issues:
-- Describe the knowledge management impact
-- {'Fix it if safe to do so' if self.auto_fix else 'Explain how to fix it'}
-- Suggest improvements for better knowledge organization
-- Recommend connections to related notes
+{'1. Fix the content\n2. Use Write tool to save the fixed file\n3. Report what you fixed' if self.auto_fix else '1. Report what is wrong\n2. Explain how to fix it'}
 
 Build a well-connected, valuable knowledge base.
 """
@@ -172,46 +200,71 @@ Build a well-connected, valuable knowledge base.
         """Build Obsidian check prompt"""
         # Check if it's a daily note
         is_daily_note = self.daily_notes_folder in str(event.path)
-        
+
         # Check if it's a template
         is_template = self.template_folder in str(event.path)
-        
+
+        file_path = str(event.path)
+
+        # Get vault root (parent of the file's directory structure)
+        # Walk up until we find the vault root (where .obsidian folder is)
+        vault_root = event.path.parent
+        while vault_root.parent != vault_root:
+            if (vault_root / '.obsidian').exists():
+                break
+            vault_root = vault_root.parent
+
+        # Get current folder relative to vault
+        try:
+            current_folder = event.path.parent.relative_to(vault_root)
+        except ValueError:
+            current_folder = event.path.parent.name
+
+        fix_action = f"""
+ACTION REQUIRED:
+1. First, use Bash to list vault folders: ls -d */ in {vault_root}
+2. Use the Read tool to read: {file_path}
+3. Analyze the content and check if the file is in the correct folder
+4. If content issues found, fix them
+5. Use the Write tool to save the fixed content to: {file_path}
+6. Provide your JSON report of what you fixed and any folder recommendations
+""" if self.auto_fix else """
+ACTION REQUIRED:
+1. Use Bash to list vault folders
+2. Use the Read tool to read the file
+3. Analyze and report issues including folder placement (do NOT modify the file)
+"""
+
         return f"""
 Obsidian note changed: {event.path.name}
-Location: {event.path.parent}
+Full path: {file_path}
+Vault root: {vault_root}
+Current folder: {current_folder}
 Event type: {event.event_type}
 Is daily note: {is_daily_note}
 Is template: {is_template}
 
-Please review this Obsidian note for knowledge management best practices.
+{fix_action}
 
 Configuration:
 - Required frontmatter fields: {', '.join(self.required_fields)}
-- Tag format: {self.tag_format}
-- Max tags: {self.max_tags}
-- Check broken links: {self.check_broken_links}
-- Suggest connections: {self.suggest_connections}
-- Min connections: {self.min_connections}
-- Min note length: {self.min_note_length} characters
-- Require headings: {self.require_headings}
+- Tag format: {self.tag_format} (use hyphens, not spaces)
 - Auto-fix enabled: {self.auto_fix}
 
 Check for:
-1. Frontmatter validity and completeness
-2. Broken wikilinks and orphaned notes
-3. Tag quality and consistency
-4. Content quality and structure
-5. Obsidian-specific syntax (embeds, callouts, etc.)
-6. Knowledge graph connections
-7. File organization
+1. FOLDER PLACEMENT: Is this note in the right folder based on its content?
+   - List folders with: ls -d */ (in vault root)
+   - Person notes → People/
+   - Project notes → Projects/
+   - Topic notes → relevant topic folder
+   - If misplaced, recommend the correct folder (don't move automatically)
 
-Provide a report of:
-1. Issues found (with severity and type)
-2. Fixes applied (if auto-fix is enabled)
-3. Smart suggestions for improving this note
-4. Recommended connections to other notes
+2. Missing or invalid YAML frontmatter (must have --- delimiters)
+3. Missing required fields: {', '.join(self.required_fields)}
+4. Inline tags (#tag) should be moved to frontmatter
+5. Code blocks should have language in fence (```python) not as text above
 
-Focus on making this note a valuable part of the knowledge base.
+{'REMEMBER: You MUST use the Write tool to save content fixes!' if self.auto_fix else 'Report issues only, do not modify.'}
 """
     
     def _parse_response(self, response_text: str) -> dict:

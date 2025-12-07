@@ -5,7 +5,7 @@ Success Screen - Configuration Complete
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
-from textual.containers import Container, Vertical
+from textual.containers import Container, Vertical, Horizontal
 
 
 class SuccessScreen(Screen):
@@ -65,8 +65,8 @@ class SuccessScreen(Screen):
                     classes="help-text"
                 )
                 
-                with Container(classes="nav-buttons"):
-                    yield Button("Finish", variant="primary", id="finish")
+            with Horizontal(classes="nav-buttons"):
+                yield Button("Finish", variant="primary", id="finish")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses"""

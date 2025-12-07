@@ -125,13 +125,29 @@ class BouncerOrchestrator:
     async def process_event(self, event: FileChangeEvent) -> List[BouncerResult]:
         """
         Process a file change event through applicable bouncers
-        
+
         Returns list of results from all bouncers that checked the file
         """
+        # Skip files in hidden directories early (before logging)
+        for part in event.path.parts:
+            if part.startswith('.') and part not in ['.', '..']:
+                logger.debug(f"Skipping file in hidden directory: {event.path}")
+                return []
+
+        # Skip if file no longer exists (was renamed or deleted)
+        if event.event_type != 'deleted' and not event.path.exists():
+            logger.debug(f"Skipping - file no longer exists: {event.path.name}")
+            return []
+
+        # Skip deleted files
+        if event.event_type == 'deleted':
+            logger.debug(f"Skipping deleted file: {event.path.name}")
+            return []
+
         logger.info(f"📝 Processing: {event.path.name} ({event.event_type})")
-        
+
         results = []
-        
+
         # Route to applicable bouncers
         for bouncer_name, bouncer in self.bouncers.items():
             if await bouncer.should_check(event):
@@ -299,9 +315,23 @@ class BouncerOrchestrator:
             '.git', 'node_modules', '__pycache__', '.pyc',
             'venv', '.env', '.bouncer'
         ])
-        
+
         path_str = str(path)
-        return any(pattern in path_str for pattern in ignore_patterns)
+
+        # Check ignore patterns
+        if any(pattern in path_str for pattern in ignore_patterns):
+            return True
+
+        # Skip files in hidden directories (directories starting with .)
+        for part in path.parts:
+            if part.startswith('.') and part not in ['.', '..']:
+                return True
+
+        # Skip temporary files
+        if path.name.endswith('.tmp') or '.tmp.' in path.name:
+            return True
+
+        return False
     
     async def start(self):
         """Start the bouncer"""

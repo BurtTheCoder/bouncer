@@ -58,20 +58,37 @@ class BaseBouncer(ABC):
     async def should_check(self, event) -> bool:
         """
         Determine if this bouncer should check this file
-        
+
         Args:
             event: FileChangeEvent
-            
+
         Returns:
             bool: True if this bouncer should check the file
         """
         if not self.enabled:
             return False
-        
+
+        # Skip deleted files - nothing to check
+        if event.event_type == 'deleted':
+            logger.debug(f"Skipping deleted file: {event.path}")
+            return False
+
+        # Skip files in hidden directories (starts with .)
+        path_parts = event.path.parts
+        for part in path_parts:
+            if part.startswith('.') and part not in ['.', '..']:
+                logger.debug(f"Skipping file in hidden directory: {event.path}")
+                return False
+
+        # Skip temporary files
+        if event.path.name.endswith('.tmp') or '.tmp.' in event.path.name:
+            logger.debug(f"Skipping temporary file: {event.path}")
+            return False
+
         # Check file extension
         if self.file_types:
             return event.path.suffix in self.file_types
-        
+
         return True
     
     @abstractmethod

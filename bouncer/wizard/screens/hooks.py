@@ -5,7 +5,7 @@ Hooks Configuration Screen
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Checkbox, Label, Input
-from textual.containers import Container, Vertical, ScrollableContainer
+from textual.containers import Container, Vertical, Horizontal, ScrollableContainer
 
 
 class HooksScreen(Screen):
@@ -119,10 +119,10 @@ class HooksScreen(Screen):
                     classes="help-text"
                 )
 
-                with Container(classes="nav-buttons"):
-                    yield Button("← Back", variant="default", id="back")
-                    yield Button("Skip", variant="default", id="skip")
-                    yield Button("Continue →", variant="primary", id="continue")
+            with Horizontal(classes="nav-buttons"):
+                yield Button("← Back", variant="default", id="back")
+                yield Button("Skip", variant="default", id="skip")
+                yield Button("Continue →", variant="primary", id="continue")
 
     def on_mount(self) -> None:
         """Initialize with saved config"""

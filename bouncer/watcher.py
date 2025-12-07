@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_MAX_PENDING_CHANGES = 10000
-DEFAULT_DEBOUNCE_DELAY = 2.0
+DEFAULT_DEBOUNCE_DELAY = 10.0  # Wait 10 seconds of quiet before processing
 DEFAULT_POLL_INTERVAL = 0.5
 
 

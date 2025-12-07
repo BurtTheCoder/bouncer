@@ -4,6 +4,16 @@
 # Directory to watch for file changes
 watch_dir: "."
 
+# File watcher settings
+# debounce_delay: How many seconds to wait after last change before processing
+#                 Higher values prevent conflicts during active editing
+#                 Default: 10 seconds
+debounce_delay: 10
+
+# poll_interval: How often to check for settled changes (seconds)
+#                Default: 0.5 seconds
+# poll_interval: 0.5
+
 # Bouncers Configuration
 bouncers:
   # Code Quality Bouncer

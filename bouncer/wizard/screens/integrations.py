@@ -5,7 +5,7 @@ MCP Integrations Setup Screen
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button, Checkbox, Label
-from textual.containers import Container, Vertical, ScrollableContainer
+from textual.containers import Container, Vertical, Horizontal, ScrollableContainer
 
 
 INTEGRATION_INFO = {
@@ -42,39 +42,34 @@ class IntegrationsScreen(Screen):
     def compose(self) -> ComposeResult:
         """Create integration configuration widgets"""
         with Container(classes="content-container"):
-            with Vertical():
-                yield Static(
-                    "[bold cyan]Step 4 of 7:[/bold cyan] Configure Integrations",
-                    classes="section-title"
-                )
-                yield Static(
-                    "Enable integrations to automatically create PRs, issues, and tickets.\n"
-                    "[dim]These are optional - you can skip this step if you don't need integrations.[/dim]",
-                    classes="help-text"
-                )
-                
-                with ScrollableContainer(classes="bouncer-list"):
-                    for integration_id, info in INTEGRATION_INFO.items():
-                        with Vertical():
-                            yield Checkbox(
-                                f"[bold]{info['name']}[/bold]\n"
-                                f"  {info['description']}\n"
-                                f"  [dim]Features: {', '.join(info['features'])}\n"
-                                f"  Requires: {info['env_var']}[/dim]",
-                                value=False,
-                                id=f"integration-{integration_id}"
-                            )
-                
-                yield Static(
-                    "\n[bold yellow]Note:[/bold yellow] API tokens should be set as environment variables.\n"
-                    "See docs/MCP_INTEGRATIONS.md for detailed setup instructions.",
-                    classes="help-text"
-                )
-                
-                with Container(classes="nav-buttons"):
-                    yield Button("← Back", variant="default", id="back")
-                    yield Button("Skip", variant="default", id="skip")
-                    yield Button("Continue →", variant="primary", id="continue")
+            yield Static(
+                "[bold cyan]Step 4 of 7:[/bold cyan] Configure Integrations",
+                classes="section-title"
+            )
+            yield Static(
+                "Enable integrations to automatically create PRs, issues, and tickets.\n"
+                "[dim]These are optional - skip if you don't need integrations.[/dim]",
+                classes="help-text"
+            )
+
+            with ScrollableContainer(classes="notification-list"):
+                for integration_id, info in INTEGRATION_INFO.items():
+                    yield Checkbox(
+                        f"[bold]{info['name']}[/bold] - {info['description']}\n"
+                        f"  [dim]Requires: {info['env_var']}[/dim]",
+                        value=False,
+                        id=f"integration-{integration_id}"
+                    )
+
+            yield Static(
+                "\n[dim]API tokens should be set as environment variables.[/dim]",
+                classes="help-text"
+            )
+
+            with Horizontal(classes="nav-buttons"):
+                yield Button("← Back", variant="default", id="back")
+                yield Button("Skip", variant="default", id="skip")
+                yield Button("Continue →", variant="primary", id="continue")
     
     def on_mount(self) -> None:
         """Initialize with saved config"""

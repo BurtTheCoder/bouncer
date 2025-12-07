@@ -15,30 +15,29 @@ class DirectoryScreen(Screen):
     def compose(self) -> ComposeResult:
         """Create directory selection widgets"""
         with Container(classes="content-container"):
-            with Vertical():
-                yield Static(
-                    "[bold cyan]Step 1 of 7:[/bold cyan] Select Directory to Watch",
-                    classes="section-title"
-                )
-                yield Static(
-                    "Choose the directory where Bouncer will monitor files.\n"
-                    "This is typically your project root directory.",
-                    classes="help-text"
-                )
-                
-                yield Label("Directory Path:")
-                yield Input(
-                    placeholder="/path/to/your/project",
-                    value=str(Path.cwd()),
-                    id="directory-input"
-                )
-                
-                yield Label("\nBrowse Directories:")
-                yield DirectoryTree(str(Path.home()), id="directory-tree")
-                
-                with Container(classes="nav-buttons"):
-                    yield Button("← Back", variant="default", id="back")
-                    yield Button("Continue →", variant="primary", id="continue")
+            yield Static(
+                "[bold cyan]Step 1 of 7:[/bold cyan] Select Directory to Watch",
+                classes="section-title"
+            )
+            yield Static(
+                "Choose the directory where Bouncer will monitor files.\n"
+                "This is typically your project root directory.",
+                classes="help-text"
+            )
+
+            yield Label("Directory Path:")
+            yield Input(
+                placeholder="/path/to/your/project",
+                value=str(Path.cwd()),
+                id="directory-input"
+            )
+
+            yield Label("\nBrowse Directories:")
+            yield DirectoryTree(str(Path.home()), id="directory-tree")
+
+            with Horizontal(classes="nav-buttons"):
+                yield Button("← Back", variant="default", id="back")
+                yield Button("Continue →", variant="primary", id="continue")
     
     def on_mount(self) -> None:
         """Initialize with current directory or saved config"""

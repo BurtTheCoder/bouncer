@@ -5,7 +5,7 @@ Welcome Screen - Introduction to Bouncer Wizard
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static, Button
-from textual.containers import Container, Vertical
+from textual.containers import Container, Vertical, Horizontal
 
 
 BOUNCER_LOGO = """
@@ -45,9 +45,9 @@ class WelcomeScreen(Screen):
                     "[bold cyan]Let's get started![/bold cyan]",
                     id="welcome-text"
                 )
-                with Container(classes="nav-buttons"):
-                    yield Button("Continue", variant="primary", id="continue")
-                    yield Button("Quit", variant="default", id="quit")
+            with Horizontal(classes="nav-buttons"):
+                yield Button("Continue", variant="primary", id="continue")
+                yield Button("Quit", variant="default", id="quit")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses"""

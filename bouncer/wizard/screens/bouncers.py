@@ -78,35 +78,30 @@ class BouncersScreen(Screen):
     def compose(self) -> ComposeResult:
         """Create bouncer selection widgets"""
         with Container(classes="content-container"):
-            with Vertical():
-                yield Static(
-                    "[bold cyan]Step 2 of 7:[/bold cyan] Select Bouncers",
-                    classes="section-title"
-                )
-                yield Static(
-                    "Choose which bouncers to enable. You can always change this later.\n"
-                    "[dim]Tip: Hover over each bouncer to see what file types it checks.[/dim]",
-                    classes="help-text"
-                )
-                
-                with Horizontal():
-                    yield Button("Select All", variant="default", id="select-all")
-                    yield Button("Deselect All", variant="default", id="deselect-all")
-                
-                with ScrollableContainer(classes="bouncer-list"):
-                    for bouncer_id, info in BOUNCER_INFO.items():
-                        with Vertical():
-                            yield Checkbox(
-                                f"[bold]{info['name']}[/bold]\n"
-                                f"  {info['description']}\n"
-                                f"  [dim]Files: {', '.join(info['file_types'][:3])}{'...' if len(info['file_types']) > 3 else ''}[/dim]",
-                                value=True,
-                                id=f"bouncer-{bouncer_id}"
-                            )
-                
-                with Container(classes="nav-buttons"):
-                    yield Button("← Back", variant="default", id="back")
-                    yield Button("Continue →", variant="primary", id="continue")
+            yield Static(
+                "[bold cyan]Step 2 of 7:[/bold cyan] Select Bouncers",
+                classes="section-title"
+            )
+            yield Static(
+                "Choose which bouncers to enable. You can always change this later.",
+                classes="help-text"
+            )
+
+            with Horizontal():
+                yield Button("Select All", variant="default", id="select-all")
+                yield Button("Deselect All", variant="default", id="deselect-all")
+
+            with ScrollableContainer(classes="bouncer-list"):
+                for bouncer_id, info in BOUNCER_INFO.items():
+                    yield Checkbox(
+                        f"[bold]{info['name']}[/bold] - {info['description']}",
+                        value=True,
+                        id=f"bouncer-{bouncer_id}"
+                    )
+
+            with Horizontal(classes="nav-buttons"):
+                yield Button("← Back", variant="default", id="back")
+                yield Button("Continue →", variant="primary", id="continue")
     
     def on_mount(self) -> None:
         """Initialize with saved config"""
