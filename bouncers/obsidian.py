@@ -135,16 +135,20 @@ class ObsidianBouncer(BaseBouncer):
         """Get system prompt for Obsidian checking"""
         fix_instructions = """
 IMPORTANT - AUTO-FIX IS ENABLED:
-You MUST use the Write tool to save your fixes to the file. Do not just report what you would fix.
+You MUST actively fix issues, not just report them.
 
-Steps:
+For content fixes:
 1. Read the file with the Read tool
-2. Identify issues
+2. Identify issues (frontmatter, tags, wikilinks, etc.)
 3. Fix the issues in the content
 4. Use the Write tool to save the fixed content back to the SAME file path
-5. Report what you fixed
 
-If you don't use the Write tool, your fixes will NOT be applied!
+For file relocation:
+1. If a file is in the WRONG folder based on its content, you MUST move it
+2. Use Bash with 'mv' command to relocate the file to the correct folder
+3. Example: mv "/path/to/current/file.md" "/path/to/correct-folder/file.md"
+
+If you don't use Write/Bash tools, your fixes will NOT be applied!
 """ if self.auto_fix else """
 AUTO-FIX IS DISABLED:
 Report issues but do NOT modify the file. Explain what should be fixed.
@@ -164,14 +168,16 @@ Your job:
 
 Obsidian-Specific Checks:
 
-**1. Folder Organization (IMPORTANT):**
+**1. Folder Organization (IMPORTANT - AUTO-MOVE ENABLED):**
 - Check if the note is in the correct folder based on its content
 - Use `ls` to see what folders exist in the vault
 - A note about a person should be in People/
 - A note about a project should be in Projects/
 - A note about a topic/concept should be in a relevant topic folder
+- Security research notes should be in Security/ or Research/
 - Daily notes should be in the daily notes folder
-- If misplaced, recommend moving the file (but don't move it automatically)
+- If misplaced, USE THE `mv` COMMAND to move the file to the correct folder
+- Example: mv "current/path/note.md" "correct-folder/note.md"
 
 **2. Frontmatter (YAML):**
 - Required fields: {', '.join(self.required_fields)}
@@ -233,10 +239,14 @@ Build a well-connected, valuable knowledge base.
 ACTION REQUIRED:
 1. First, use Bash to list vault folders: ls -d */ in {vault_root}
 2. Use the Read tool to read: {file_path}
-3. Analyze the content and check if the file is in the correct folder
-4. If content issues found, fix them
-5. Use the Write tool to save the fixed content to: {file_path}
-6. Provide your JSON report of what you fixed and any folder recommendations
+3. Analyze the content and determine:
+   a) What type of note is this? (person, project, security research, topic, etc.)
+   b) Is it in the correct folder for that type?
+4. If the file is in the WRONG folder:
+   - Use Bash with mv command to move it: mv "{file_path}" "{vault_root}/CorrectFolder/{event.path.name}"
+   - Make sure the destination folder exists first
+5. If content issues found (frontmatter, tags, wikilinks), fix them with Write tool
+6. Provide your JSON report of what you fixed including any file moves
 """ if self.auto_fix else """
 ACTION REQUIRED:
 1. Use Bash to list vault folders
@@ -261,12 +271,13 @@ Configuration:
 - Auto-fix enabled: {self.auto_fix}
 
 Check for:
-1. FOLDER PLACEMENT: Is this note in the right folder based on its content?
+1. FOLDER PLACEMENT (AUTO-MOVE ENABLED): Is this note in the right folder?
    - List folders with: ls -d */ (in vault root)
    - Person notes → People/
    - Project notes → Projects/
+   - Security/vulnerability research → Security/ or Research/
    - Topic notes → relevant topic folder
-   - If misplaced, recommend the correct folder (don't move automatically)
+   - If misplaced, MOVE THE FILE using: mv "current/path" "correct/path"
 
 2. Missing or invalid YAML frontmatter (must have --- delimiters)
 3. Missing required fields: {', '.join(self.required_fields)}
