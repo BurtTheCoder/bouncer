@@ -358,22 +358,33 @@ class BouncerOrchestrator:
         await asyncio.sleep(1)  # Allow cleanup
         logger.info("👋 Bouncer stopped")
 
-    async def scan(self, target_dir: Path, git_diff: bool = False, since: Optional[str] = None) -> Dict[str, Any]:
+    async def scan(
+        self,
+        target_dir: Path,
+        git_diff: bool = False,
+        since: Optional[str] = None,
+        max_files: Optional[int] = None,
+        random_sample: bool = False
+    ) -> Dict[str, Any]:
         """
         Scan a directory in batch mode
-        
+
         Args:
             target_dir: Directory to scan
             git_diff: If True, only scan files in git diff
             since: Time window for git diff (e.g., "1 hour ago", "24 hours ago")
-        
+            max_files: Maximum number of files to scan (None for all)
+            random_sample: If True, randomly sample files instead of sequential
+
         Returns:
             Dictionary with scan results and summary
         """
+        import random as rand_module
+
         logger.info("🔍 Starting batch scan...")
         logger.info(f"📁 Target: {target_dir}")
         logger.info(f"🎯 Active bouncers: {', '.join(self.bouncers.keys())}")
-        
+
         # Get files to scan
         if git_diff:
             logger.info(f"📊 Mode: Incremental (git diff since {since or 'last commit'})")
@@ -381,6 +392,16 @@ class BouncerOrchestrator:
         else:
             logger.info("📊 Mode: Full scan")
             files = await self._get_all_files(target_dir)
+
+        # Apply random sampling if requested
+        if random_sample and files:
+            rand_module.shuffle(files)
+            logger.info("🎲 Files shuffled for random sampling")
+
+        # Apply max_files limit
+        if max_files and len(files) > max_files:
+            files = files[:max_files]
+            logger.info(f"📊 Limited to {max_files} files")
         
         if not files:
             logger.info("✅ No files to scan")

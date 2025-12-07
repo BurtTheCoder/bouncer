@@ -224,13 +224,26 @@ Examples:
         action='store_true',
         help='Report issues without making any changes (disables auto-fix)'
     )
-    
+
     parser.add_argument(
         '--diff-only',
         action='store_true',
         help='Only check files that have changed (alias for --git-diff)'
     )
-    
+
+    parser.add_argument(
+        '--max-files',
+        type=int,
+        default=None,
+        help='Maximum number of files to scan (useful for large vaults/repos)'
+    )
+
+    parser.add_argument(
+        '--random',
+        action='store_true',
+        help='Randomly sample files instead of sequential order (use with --max-files)'
+    )
+
     args = parser.parse_args()
     
     # Handle flag aliases
@@ -374,12 +387,18 @@ Examples:
         
         # Run scan
         logger.info("🔍 Starting Bouncer scan...")
-        
+        if args.max_files:
+            logger.info(f"📊 Max files: {args.max_files}")
+        if args.random:
+            logger.info("🎲 Random sampling enabled")
+
         try:
             summary = await orchestrator.scan(
                 target_dir=args.target_dir,
                 git_diff=args.git_diff,
-                since=args.since
+                since=args.since,
+                max_files=args.max_files,
+                random_sample=args.random
             )
             
             # Print summary
